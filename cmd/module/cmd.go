@@ -4,6 +4,8 @@ import (
 	"context"
 
 	"github.com/edaniels/golog"
+	"github.com/shawnbmccarthy/viam-yahboom-transbot-ros/rosimu"
+	"go.viam.com/rdk/components/movementsensor"
 	"go.viam.com/rdk/module"
 )
 
@@ -26,6 +28,7 @@ func realMain() error {
 	/*
 	 * add modules here (TBD)
 	 */
+	err = myMod.AddModuleFromRegistry(ctx, movementsensor.API, rosimu.Model)
 
 	err = myMod.Start(ctx)
 	defer myMod.Close(ctx)

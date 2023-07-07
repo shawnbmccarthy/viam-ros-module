@@ -2,13 +2,13 @@ package rosimu
 
 import (
 	"context"
-	"errors"
 	"strings"
 	"sync"
 
 	"github.com/edaniels/golog"
 	"github.com/golang/geo/r3"
 	geo "github.com/kellydunn/golang-geo"
+	"github.com/pkg/errors"
 
 	"go.viam.com/rdk/components/movementsensor"
 	"go.viam.com/rdk/resource"
@@ -74,7 +74,6 @@ func (m *MyMovementSensor) Reconfigure(ctx context.Context, deps resource.Depend
 		m.rosnodename = "viam_imu_node"
 	}
 
-	// does a struct set the value to nil first?
 	if m.rossubscriber != nil {
 		m.rossubscriber.Close()
 	}
@@ -84,13 +83,17 @@ func (m *MyMovementSensor) Reconfigure(ctx context.Context, deps resource.Depend
 	}
 
 	m.rosnode, err := goroslib.NewNode(goroslib.NodeConf{
-		Name: m.rosnodename,
+		Name:          m.rosname,
 		MasterAddress: m.rosmaster,
 	})
 
+	if err != nil {
+		return err
+	}
+
 	m.rossubscriber, err := goroslib.Subscriber{
-		Node: m.rosnode,
-		Topic: m.rostopic,
+		Node:     m.rosnode,
+		Topic:    m.rostopic,
 		Callback: m.processMessage,
 	})
 
@@ -102,7 +105,7 @@ func (m *MyMovementSensor) Reconfigure(ctx context.Context, deps resource.Depend
 }
 
 func (m *MyMovementSensor) processMessage(msg *sensor_msgs.Imu) {
-	return
+	m.rosmsg = msg
 }
 
 func (m *MyMovementSensor) Position(Position(ctx context.Context, extra map[string]interface{}) (*geo.Point, float64, error) {
@@ -117,7 +120,10 @@ func (m *MyMovementSensor) LinearVelocity(ctx context.Context, extra map[string]
 
 func (m *MyMovementSensor) AngularVelocity(ctx context.Context, extra map[string]interface{}) (spatialmath.AngularVelocity, error) {
 	// IMU
-	return errUnimplemented
+	if m.rosmsgs == nil {
+		return spatialmath.AngularVelocity{}, errors.New("message unavailable")
+	}
+	return m.rosmgs.AngularVelocity, nil
 }
 
 func (m *MyMovementSensor) LinearAcceleration(ctx context.Context, extra map[string]interface{}) (r3.Vector, error) {
