@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"github.com/shawnbmccarthy/viam-yahboom-transbot-ros/sensors"
+	"go.viam.com/rdk/components/sensor"
 
 	"github.com/edaniels/golog"
 	"github.com/shawnbmccarthy/viam-yahboom-transbot-ros/imu"
@@ -29,6 +31,7 @@ func realMain() error {
 	 * add modules here (TBD)
 	 */
 	err = myMod.AddModelFromRegistry(ctx, movementsensor.API, imu.Model)
+	err = myMod.AddModelFromRegistry(ctx, sensor.API, sensors.BatteryModel)
 
 	err = myMod.Start(ctx)
 	defer myMod.Close(ctx)

@@ -56,8 +56,8 @@ func NewBatterySensor(
 }
 
 func (b *BatterySensor) Reconfigure(
-	ctx context.Context,
-	deps resource.Dependencies,
+	_ context.Context,
+	_ resource.Dependencies,
 	conf resource.Config,
 ) error {
 	b.mu.Lock()
@@ -118,11 +118,18 @@ func (b *BatterySensor) processMessage(msg *transbot_msgs.Battery) {
 }
 
 func (b *BatterySensor) Readings(
-	ctx context.Context,
-	extra map[string]interface{},
+	_ context.Context,
+	_ map[string]interface{},
 ) (map[string]interface{}, error) {
 	if b.msg == nil {
 		return nil, errors.New("battery message not prepared")
 	}
 	return map[string]interface{}{"voltage": b.msg.Voltage}, nil
+}
+
+func (b *BatterySensor) Close(_ context.Context) error {
+	err := b.subscriber.Close()
+	err = b.node.Close()
+	
+	return err
 }
