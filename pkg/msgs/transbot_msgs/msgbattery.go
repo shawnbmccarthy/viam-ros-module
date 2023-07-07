@@ -6,5 +6,5 @@ import (
 
 type Battery struct {
 	msg.Package `ros:"transbot_msgs"`
-	Voltage     float32
+	Voltage     float32 `rosname:"Voltage"`
 }
