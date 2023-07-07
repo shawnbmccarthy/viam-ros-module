@@ -95,7 +95,7 @@ func (m *MyMovementSensor) Reconfigure(ctx context.Context, deps resource.Depend
 		Node:     m.rosnode,
 		Topic:    m.rostopic,
 		Callback: m.processMessage,
-	})
+	}
 
 	if err != nil {
 		return err
