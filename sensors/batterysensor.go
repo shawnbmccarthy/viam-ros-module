@@ -75,7 +75,7 @@ func (b *BatterySensor) Reconfigure(
 	}
 
 	if len(strings.TrimSpace(b.nodeName)) == 0 {
-		b.nodeName = "viam_imu_node"
+		b.nodeName = "viam_batterysensor_node"
 	}
 
 	if b.subscriber != nil {
@@ -130,6 +130,6 @@ func (b *BatterySensor) Readings(
 func (b *BatterySensor) Close(_ context.Context) error {
 	err := b.subscriber.Close()
 	err = b.node.Close()
-	
+
 	return err
 }
