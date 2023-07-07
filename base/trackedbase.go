@@ -108,6 +108,10 @@ func (t *TrackedBase) Reconfigure(
 		return err
 	}
 
+	// create a timed thing
+	// using this as an example https://github.com/bluenviron/goroslib/blob/main/examples/publisher-custom/main.go
+	r := t.node.TimeRate(t.timeRate)
+	
 	// this will only publish velocity messages
 	// TODO: need support for other base methods
 	t.publisher, err = goroslib.NewPublisher(goroslib.PublisherConf{
@@ -118,6 +122,7 @@ func (t *TrackedBase) Reconfigure(
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
