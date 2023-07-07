@@ -1,4 +1,4 @@
-module viam-ros
+module github.com/shawnbmccarthy/viam-yahboom-transbot-ros
 
 go 1.19
 
@@ -8,7 +8,6 @@ require (
 	github.com/golang/geo v0.0.0-20230421003525-6adc56603217
 	github.com/kellydunn/golang-geo v0.7.0
 	github.com/pkg/errors v0.9.1
-	github.com/shawnbmccarthy/viam-yahboom-transbot-ros v0.0.0-20230707120805-3fe18d4948f4
 	go.viam.com/rdk v0.3.0
 )
 
