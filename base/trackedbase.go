@@ -78,8 +78,8 @@ func NewTrackedBase(
 
 // Reconfigure clean this up
 func (t *TrackedBase) Reconfigure(
-	ctx context.Context,
-	deps resource.Dependencies,
+	_ context.Context,
+	_ resource.Dependencies,
 	conf resource.Config,
 ) error {
 	var err error
@@ -90,10 +90,12 @@ func (t *TrackedBase) Reconfigure(
 	t.topic = conf.Attributes.String("topic")
 
 	timeMs := conf.Attributes.Int("time_rate_ms", 250)
-	
+
 	t.timeRate = time.Duration(timeMs) * time.Millisecond
-	t.twistMsg.Linear = geometry_msgs.Vector3{X: 0.0, Y: 0.0, Z: 0.0}
-	t.twistMsg.Angular = geometry_msgs.Vector3{X: 0.0, Y: 0.0, Z: 0.0}
+	t.twistMsg = &geometry_msgs.Twist{
+		Linear:  geometry_msgs.Vector3{X: 0.0, Y: 0.0, Z: 0.0},
+		Angular: geometry_msgs.Vector3{X: 0.0, Y: 0.0, Z: 0.0},
+	}
 
 	if len(strings.TrimSpace(t.primaryUri)) == 0 {
 		return errors.New("ROS primary uri must be set to hostname:port")
@@ -163,42 +165,49 @@ func (t *TrackedBase) Spin(
 }
 
 func (t *TrackedBase) SetPower(
-	ctx context.Context,
+	_ context.Context,
 	linear r3.Vector,
 	angular r3.Vector,
-	extra map[string]interface{},
+	_ map[string]interface{},
 ) error {
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	t.twistMsg.Linear = geometry_msgs.Vector3{X: linear.Y, Y: 0.0, Z: 0.0}
-	t.twistMsg.Angular = geometry_msgs.Vector3{X: 0.0, Y: 0.0, Z: angular.Z}
-	return nil
-}
-
-func (t *TrackedBase) SetVelocity(
-	ctx context.Context,
-	linear r3.Vector,
-	angular r3.Vector,
-	extra map[string]interface{},
-) error {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	t.twistMsg.Linear = geometry_msgs.Vector3{X: linear.Y, Y: 0.0, Z: 0.0}
-	t.twistMsg.Angular = geometry_msgs.Vector3{X: 0.0, Y: 0.0, Z: angular.Z}
+	t.twistMsg = &geometry_msgs.Twist{
+		Linear:  geometry_msgs.Vector3{X: linear.Y, Y: 0.0, Z: 0.0},
+		Angular: geometry_msgs.Vector3{X: 0.0, Y: 0.0, Z: angular.Z},
+	}
 	t.moving = true
 	return nil
 }
 
-func (t *TrackedBase) Stop(ctx context.Context, extra map[string]interface{}) error {
+func (t *TrackedBase) SetVelocity(
+	_ context.Context,
+	linear r3.Vector,
+	angular r3.Vector,
+	_ map[string]interface{},
+) error {
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	t.twistMsg.Linear = geometry_msgs.Vector3{X: 0.0, Y: 0.0, Z: 0.0}
-	t.twistMsg.Angular = geometry_msgs.Vector3{X: 0.0, Y: 0.0, Z: 0.0}
+	t.twistMsg = &geometry_msgs.Twist{
+		Linear:  geometry_msgs.Vector3{X: linear.Y, Y: 0.0, Z: 0.0},
+		Angular: geometry_msgs.Vector3{X: 0.0, Y: 0.0, Z: angular.Z},
+	}
+	t.moving = true
+	return nil
+}
+
+func (t *TrackedBase) Stop(_ context.Context, _ map[string]interface{}) error {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	t.twistMsg = &geometry_msgs.Twist{
+		Linear:  geometry_msgs.Vector3{X: 0.0, Y: 0.0, Z: 0.0},
+		Angular: geometry_msgs.Vector3{X: 0.0, Y: 0.0, Z: 0.0},
+	}
 	t.moving = false
 	return nil
 }
 
-func (t *TrackedBase) IsMoving(ctx context.Context) (bool, error) {
+func (t *TrackedBase) IsMoving(_ context.Context) (bool, error) {
 	return t.moving, nil
 }
 
@@ -210,14 +219,17 @@ func (t *TrackedBase) Close(_ context.Context) error {
 	return err
 }
 
-func (t *TrackedBase) Properties(ctx context.Context, extra map[string]interface{}) (viambase.Properties, error) {
+func (t *TrackedBase) Properties(
+	_ context.Context,
+	_ map[string]interface{},
+) (viambase.Properties, error) {
 	return viambase.Properties{
 		TurningRadiusMeters: 0.0,
 		WidthMeters:         0.0,
 	}, nil
 }
 
-func (t *TrackedBase) Geometries(ctx context.Context) ([]spatialmath.Geometry, error) {
+func (t *TrackedBase) Geometries(_ context.Context) ([]spatialmath.Geometry, error) {
 	t.logger.Warn("Geometries Not Implemented")
 	return nil, nil
 }
