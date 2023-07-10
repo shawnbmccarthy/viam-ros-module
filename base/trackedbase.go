@@ -2,6 +2,7 @@ package base
 
 import (
 	"context"
+	"errors"
 	"github.com/bluenviron/goroslib/v2"
 	"github.com/bluenviron/goroslib/v2/pkg/msgs/geometry_msgs"
 	"github.com/edaniels/golog"

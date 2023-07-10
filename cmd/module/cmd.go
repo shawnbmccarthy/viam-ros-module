@@ -35,7 +35,7 @@ func realMain() error {
 	err = myMod.AddModelFromRegistry(ctx, movementsensor.API, imu.Model)
 	err = myMod.AddModelFromRegistry(ctx, sensor.API, sensors.BatteryModel)
 	err = myMod.AddModelFromRegistry(ctx, viambase.API, base.TrackedBaseModel)
-	
+
 	err = myMod.Start(ctx)
 	defer myMod.Close(ctx)
 	if err != nil {
