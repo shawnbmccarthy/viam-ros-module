@@ -11,6 +11,7 @@ import (
 	"go.viam.com/rdk/spatialmath"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -28,7 +29,8 @@ type TrackedBase struct {
 	publisher  *goroslib.Publisher
 	twistMsg   *geometry_msgs.Twist
 	logger     golog.Logger
-	isMoving   bool
+	msgRate    *goroslib.NodeRate
+	closed     int32
 }
 
 func init() {
@@ -56,9 +58,20 @@ func NewTrackedBase(
 		return nil, err
 	}
 
+	// set twist message thread
+	go func() {
+		for atomic.LoadInt32(&t.closed) == 0 {
+			select {
+			case <-t.msgRate.SleepChan():
+				t.publisher.Write(t.twistMsg)
+			}
+		}
+	}()
+
 	return t, nil
 }
 
+// Reconfigure clean this up
 func (t *TrackedBase) Reconfigure(
 	ctx context.Context,
 	deps resource.Dependencies,
@@ -71,10 +84,10 @@ func (t *TrackedBase) Reconfigure(
 	t.primaryUri = conf.Attributes.String("primary_uri")
 	t.topic = conf.Attributes.String("topic")
 
-	timeMs := conf.Attributes.Int("time_rate_ms", 500)
+	timeMs := conf.Attributes.Int("time_rate_ms", 250)
 
-	// TODO: create a 500 millisecond publisher?
-	t.timeRate = timeMs * time.Millisecond
+	// TODO: create a 250 millisecond publisher?
+	t.timeRate = time.Duration(timeMs) * time.Millisecond
 
 	if len(strings.TrimSpace(t.primaryUri)) == 0 {
 		return errors.New("ROS primary uri must be set to hostname:port")
@@ -104,16 +117,13 @@ func (t *TrackedBase) Reconfigure(
 		Name:          t.nodeName,
 		MasterAddress: t.primaryUri,
 	})
+
+	t.msgRate = t.node.TimeRate(t.timeRate)
 	if err != nil {
 		return err
 	}
 
-	// create a timed thing
-	// using this as an example https://github.com/bluenviron/goroslib/blob/main/examples/publisher-custom/main.go
-	r := t.node.TimeRate(t.timeRate)
-	
-	// this will only publish velocity messages
-	// TODO: need support for other base methods
+	// publisher for twist messages
 	t.publisher, err = goroslib.NewPublisher(goroslib.PublisherConf{
 		Node:  t.node,
 		Topic: t.topic,
@@ -122,7 +132,7 @@ func (t *TrackedBase) Reconfigure(
 	if err != nil {
 		return err
 	}
-
+	atomic.StoreInt32(&t.closed, 0)
 	return nil
 }
 
@@ -132,6 +142,7 @@ func (t *TrackedBase) MoveStraight(
 	mmPerSec float64,
 	extra map[string]interface{},
 ) error {
+	t.logger.Warn("MoveStraight Not Implemented")
 	return nil
 }
 
@@ -141,6 +152,7 @@ func (t *TrackedBase) Spin(
 	degsPerSec float64,
 	extra map[string]interface{},
 ) error {
+	t.logger.Warn("Spin Not Implemented")
 	return nil
 }
 
@@ -148,8 +160,10 @@ func (t *TrackedBase) SetPower(
 	ctx context.Context,
 	linear r3.Vector,
 	angular r3.Vector,
-	extra map[string]interface{}
+	extra map[string]interface{},
 ) error {
+	t.twistMsg.Linear = geometry_msgs.Vector3{X: linear.Y, Y: 0.0, Z: 0.0}
+	t.twistMsg.Angular = geometry_msgs.Vector3{X: 0.0, Y: 0.0, Z: angular.Z}
 	return nil
 }
 
@@ -157,12 +171,16 @@ func (t *TrackedBase) SetVelocity(
 	ctx context.Context,
 	linear r3.Vector,
 	angular r3.Vector,
-	extra map[string]interface{}
+	extra map[string]interface{},
 ) error {
+	t.twistMsg.Linear = geometry_msgs.Vector3{X: linear.Y, Y: 0.0, Z: 0.0}
+	t.twistMsg.Angular = geometry_msgs.Vector3{X: 0.0, Y: 0.0, Z: angular.Z}
 	return nil
 }
 
 func (t *TrackedBase) Stop(ctx context.Context, extra map[string]interface{}) error {
+	t.twistMsg.Linear = geometry_msgs.Vector3{X: 0.0, Y: 0.0, Z: 0.0}
+	t.twistMsg.Angular = geometry_msgs.Vector3{X: 0.0, Y: 0.0, Z: 0.0}
 	return nil
 }
 
@@ -171,6 +189,7 @@ func (t *TrackedBase) IsMoving(ctx context.Context) (bool, error) {
 }
 
 func (t *TrackedBase) Close(_ context.Context) error {
+	atomic.StoreInt32(&t.closed, 1)
 	err := t.publisher.Close()
 	err = t.node.Close()
 
@@ -180,10 +199,11 @@ func (t *TrackedBase) Close(_ context.Context) error {
 func (t *TrackedBase) Properties(ctx context.Context, extra map[string]interface{}) (viambase.Properties, error) {
 	return viambase.Properties{
 		TurningRadiusMeters: 0.0,
-		WidthMeters: 0.0,
+		WidthMeters:         0.0,
 	}, nil
 }
 
 func (t *TrackedBase) Geometries(ctx context.Context) ([]spatialmath.Geometry, error) {
+	t.logger.Warn("Geometries Not Implemented")
 	return nil, nil
 }
