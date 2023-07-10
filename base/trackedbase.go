@@ -32,6 +32,7 @@ type TrackedBase struct {
 	logger     golog.Logger
 	msgRate    *goroslib.NodeRate
 	closed     int32
+	moving     bool
 }
 
 func init() {
@@ -64,8 +65,10 @@ func NewTrackedBase(
 		for atomic.LoadInt32(&t.closed) == 0 {
 			select {
 			case <-t.msgRate.SleepChan():
+				t.mu.Lock()
 				t.logger.Infof("writing message %v", t.twistMsg)
 				t.publisher.Write(t.twistMsg)
+				t.mu.Unlock()
 			}
 		}
 	}()
@@ -164,6 +167,8 @@ func (t *TrackedBase) SetPower(
 	angular r3.Vector,
 	extra map[string]interface{},
 ) error {
+	t.mu.Lock()
+	defer t.mu.Unlock()
 	t.twistMsg.Linear = geometry_msgs.Vector3{X: linear.Y, Y: 0.0, Z: 0.0}
 	t.twistMsg.Angular = geometry_msgs.Vector3{X: 0.0, Y: 0.0, Z: angular.Z}
 	return nil
@@ -175,19 +180,25 @@ func (t *TrackedBase) SetVelocity(
 	angular r3.Vector,
 	extra map[string]interface{},
 ) error {
+	t.mu.Lock()
+	defer t.mu.Unlock()
 	t.twistMsg.Linear = geometry_msgs.Vector3{X: linear.Y, Y: 0.0, Z: 0.0}
 	t.twistMsg.Angular = geometry_msgs.Vector3{X: 0.0, Y: 0.0, Z: angular.Z}
+	t.moving = true
 	return nil
 }
 
 func (t *TrackedBase) Stop(ctx context.Context, extra map[string]interface{}) error {
+	t.mu.Lock()
+	defer t.mu.Unlock()
 	t.twistMsg.Linear = geometry_msgs.Vector3{X: 0.0, Y: 0.0, Z: 0.0}
 	t.twistMsg.Angular = geometry_msgs.Vector3{X: 0.0, Y: 0.0, Z: 0.0}
+	t.moving = false
 	return nil
 }
 
 func (t *TrackedBase) IsMoving(ctx context.Context) (bool, error) {
-	return false, nil
+	return t.moving, nil
 }
 
 func (t *TrackedBase) Close(_ context.Context) error {
