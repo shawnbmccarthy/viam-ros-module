@@ -90,9 +90,10 @@ func (t *TrackedBase) Reconfigure(
 	t.topic = conf.Attributes.String("topic")
 
 	timeMs := conf.Attributes.Int("time_rate_ms", 250)
-
-	// TODO: create a 250 millisecond publisher?
+	
 	t.timeRate = time.Duration(timeMs) * time.Millisecond
+	t.twistMsg.Linear = geometry_msgs.Vector3{X: 0.0, Y: 0.0, Z: 0.0}
+	t.twistMsg.Angular = geometry_msgs.Vector3{X: 0.0, Y: 0.0, Z: 0.0}
 
 	if len(strings.TrimSpace(t.primaryUri)) == 0 {
 		return errors.New("ROS primary uri must be set to hostname:port")
