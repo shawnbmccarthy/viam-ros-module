@@ -64,6 +64,7 @@ func NewTrackedBase(
 		for atomic.LoadInt32(&t.closed) == 0 {
 			select {
 			case <-t.msgRate.SleepChan():
+				t.logger.Infof("writing message %v", t.twistMsg)
 				t.publisher.Write(t.twistMsg)
 			}
 		}

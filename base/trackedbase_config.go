@@ -6,7 +6,7 @@ type TrackedBaseConfig struct {
 	NodeName   string `json:"node_name"`
 	PrimaryUri string `json:"primary_uri"`
 	Topic      string `json:"topic"`
-	TimeRate   int64  `json:"time_rate"` // in ms
+	TimeRate   int64  `json:"time_rate_ms"` // in ms
 }
 
 func (cfg *TrackedBaseConfig) Validate(path string) ([]string, error) {
