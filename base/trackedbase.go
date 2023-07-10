@@ -66,7 +66,6 @@ func NewTrackedBase(
 			select {
 			case <-t.msgRate.SleepChan():
 				t.mu.Lock()
-				t.logger.Infof("writing message %v", t.twistMsg)
 				t.publisher.Write(t.twistMsg)
 				t.mu.Unlock()
 			}
