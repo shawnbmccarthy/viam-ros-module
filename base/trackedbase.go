@@ -110,7 +110,7 @@ func (t *TrackedBase) Reconfigure(
 
 	if t.publisher != nil {
 		if t.publisher.Close() != nil {
-			t.logger.Warn("failed to close subscriber")
+			t.logger.Warn("failed to close publisher")
 		}
 	}
 
