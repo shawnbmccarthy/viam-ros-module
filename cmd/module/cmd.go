@@ -3,8 +3,10 @@ package main
 import (
 	"context"
 	"github.com/shawnbmccarthy/viam-yahboom-transbot-ros/base"
+	"github.com/shawnbmccarthy/viam-yahboom-transbot-ros/lidar"
 	"github.com/shawnbmccarthy/viam-yahboom-transbot-ros/sensors"
 	viambase "go.viam.com/rdk/components/base"
+	"go.viam.com/rdk/components/camera"
 	"go.viam.com/rdk/components/sensor"
 
 	"github.com/edaniels/golog"
@@ -35,7 +37,8 @@ func realMain() error {
 	err = myMod.AddModelFromRegistry(ctx, movementsensor.API, imu.Model)
 	err = myMod.AddModelFromRegistry(ctx, sensor.API, sensors.BatteryModel)
 	err = myMod.AddModelFromRegistry(ctx, viambase.API, base.TrackedBaseModel)
-
+	err = myMod.AddModelFromRegistry(ctx, camera.API, lidar.ROSLidarModel)
+	
 	err = myMod.Start(ctx)
 	defer myMod.Close(ctx)
 	if err != nil {

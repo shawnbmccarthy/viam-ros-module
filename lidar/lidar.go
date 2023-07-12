@@ -4,7 +4,9 @@ import (
 	"context"
 	"errors"
 	"github.com/bluenviron/goroslib/v2"
+	"github.com/bluenviron/goroslib/v2/pkg/msgs/sensor_msgs"
 	"github.com/edaniels/golog"
+	"github.com/shawnbmccarthy/viam-yahboom-transbot-ros/utils"
 	"github.com/viamrobotics/gostream"
 	"go.viam.com/rdk/components/camera"
 	"go.viam.com/rdk/pointcloud"
@@ -20,14 +22,16 @@ var ROSLidarModel = resource.NewModel("viamlabs", "ros", "lidar")
 type ROSLidar struct {
 	resource.Named
 
-	mu         sync.Mutex
-	nodeName   string
-	primaryUri string
-	topic      string
-	timeRate   time.Duration // ms to publish
-	node       *goroslib.Node
-	subscriber *goroslib.Subscriber
-	logger     golog.Logger
+	mu              sync.Mutex
+	nodeName        string
+	primaryUri      string
+	topic           string
+	timeRate        time.Duration // ms to publish
+	node            *goroslib.Node
+	subscriber      *goroslib.Subscriber
+	msg             *sensor_msgs.PointCloud2
+	logger          golog.Logger
+	laserProjection *utils.LaserProjection
 }
 
 func init() {
@@ -47,8 +51,9 @@ func NewROSLidar(
 	logger golog.Logger,
 ) (camera.Camera, error) {
 	l := &ROSLidar{
-		Named:  conf.ResourceName().AsNamed(),
-		logger: logger,
+		Named:           conf.ResourceName().AsNamed(),
+		logger:          logger,
+		laserProjection: utils.NewLaserProjection(),
 	}
 
 	if err := l.Reconfigure(ctx, deps, conf); err != nil {
@@ -102,13 +107,19 @@ func (l *ROSLidar) Reconfigure(
 
 	// publisher for twist messages
 	l.subscriber, err = goroslib.NewSubscriber(goroslib.SubscriberConf{
-		Node:  l.node,
-		Topic: l.topic,
+		Node:     l.node,
+		Topic:    l.topic,
+		Callback: l.processMessage,
 	})
 	if err != nil {
 		return err
 	}
 	return nil
+}
+
+func (l *ROSLidar) processMessage(msg *sensor_msgs.LaserScan) {
+	msg1 := l.laserProjection.ProjectLaser(msg, -1.0, utils.DEFAULT)
+	l.msg = &msg1
 }
 
 func (l *ROSLidar) Projector(ctx context.Context) (transform.Projector, error) {
