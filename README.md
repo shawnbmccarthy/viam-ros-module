@@ -1,5 +1,8 @@
 # viam-yahboom-transbot-ros
 
+## TODO
+
+Use generic config
 
 ## Published topics
  * /contour_moments/parameter_updates [dynamic_reconfigure/Config] 1 publisher

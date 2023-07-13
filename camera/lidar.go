@@ -164,7 +164,7 @@ func (l *ROSLidar) NextPointCloud(_ context.Context) (pointcloud.PointCloud, err
 		return pc, nil
 	}
 
-	return nil, fmt.Errorf("not implemented")
+	return pc, nil
 }
 
 func pointFrom(yaw, pitch, distance float64, reflectivity uint8) (r3.Vector, pointcloud.Data) {
