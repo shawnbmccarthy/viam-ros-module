@@ -124,7 +124,7 @@ func (e *EditionSensor) Readings(
 	if e.msg == nil {
 		return nil, errors.New("edition message not prepared")
 	}
-	return map[string]interface{}{"voltage": e.msg.Edition}, nil
+	return map[string]interface{}{"edition": e.msg.Edition}, nil
 }
 
 func (e *EditionSensor) Close(_ context.Context) error {

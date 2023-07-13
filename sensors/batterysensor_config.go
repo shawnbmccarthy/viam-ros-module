@@ -11,11 +11,11 @@ type BatterySensorConfig struct {
 func (cfg *BatterySensorConfig) Validate(path string) ([]string, error) {
 	// NodeName will get default value if string is empty
 	if cfg.PrimaryUri == "" {
-		return nil, fmt.Errorf(`expted "RosMaster" attribute for sensor %q`, path)
+		return nil, fmt.Errorf(`expected "PrimaryUri" attribute for sensor %q`, path)
 	}
 
 	if cfg.Topic == "" {
-		return nil, fmt.Errorf(`expted "RosTopic" attribute for sensor %q`, path)
+		return nil, fmt.Errorf(`expected "RosTopic" attribute for sensor %q`, path)
 	}
 
 	return nil, nil
