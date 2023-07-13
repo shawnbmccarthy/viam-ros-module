@@ -113,19 +113,19 @@ func (c *IrCamera) Reconfigure(
 	return nil
 }
 
-func (l *IrCamera) processMessage(msg *sensor_msgs.Image) {
-	l.msg = msg
+func (c *IrCamera) processMessage(msg *sensor_msgs.Image) {
+	c.msg = msg
 }
 
-func (l *IrCamera) Projector(_ context.Context) (transform.Projector, error) {
+func (c *IrCamera) Projector(_ context.Context) (transform.Projector, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (l *IrCamera) Stream(_ context.Context, _ ...gostream.ErrorHandler) (gostream.VideoStream, error) {
+func (c *IrCamera) Stream(_ context.Context, _ ...gostream.ErrorHandler) (gostream.VideoStream, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (l *IrCamera) NextPointCloud(_ context.Context) (pointcloud.PointCloud, error) {
+func (c *IrCamera) NextPointCloud(_ context.Context) (pointcloud.PointCloud, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
