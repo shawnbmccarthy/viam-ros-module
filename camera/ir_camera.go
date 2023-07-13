@@ -34,7 +34,7 @@ type IrCamera struct {
 func init() {
 	resource.RegisterComponent(
 		camera.API,
-		ROSLidarModel,
+		IrCameraModel,
 		resource.Registration[camera.Camera, *IrCameraCfg]{
 			Constructor: NewIrCamera,
 		},
@@ -81,7 +81,7 @@ func (c *IrCamera) Reconfigure(
 	}
 
 	if len(strings.TrimSpace(c.nodeName)) == 0 {
-		c.nodeName = "viam_lidar_node"
+		c.nodeName = "viam_irnode_node"
 	}
 
 	if c.subscriber != nil {
