@@ -1,6 +1,6 @@
-module github.com/shawnbmccarthy/viam-yahboom-transbot-ros
+module github.com/shawnbmccarthy/viam-ros-module
 
-go 1.19
+go 1.20
 
 require (
 	github.com/bluenviron/goroslib/v2 v2.1.0
@@ -8,7 +8,8 @@ require (
 	github.com/golang/geo v0.0.0-20230421003525-6adc56603217
 	github.com/kellydunn/golang-geo v0.7.0
 	github.com/pkg/errors v0.9.1
-	go.viam.com/rdk v0.3.0
+	github.com/viamrobotics/gostream v0.0.0-20230620143908-ebc296297d90
+	go.viam.com/rdk v0.4.0
 )
 
 require (
@@ -117,7 +118,6 @@ require (
 	github.com/srikrsna/protoc-gen-gotag v0.6.2 // indirect
 	github.com/stretchr/testify v1.8.4 // indirect
 	github.com/viam-labs/go-libjpeg v0.3.1 // indirect
-	github.com/viamrobotics/gostream v0.0.0-20230609200515-c5d67c29ed25 // indirect
 	github.com/xdg-go/pbkdf2 v1.0.0 // indirect
 	github.com/xdg-go/scram v1.1.2 // indirect
 	github.com/xdg-go/stringprep v1.0.4 // indirect
@@ -133,9 +133,9 @@ require (
 	go.uber.org/goleak v1.2.1 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.24.0 // indirect
-	go.viam.com/api v0.1.132 // indirect
+	go.viam.com/api v0.1.143 // indirect
 	go.viam.com/test v1.1.1-0.20220913152726-5da9916c08a2 // indirect
-	go.viam.com/utils v0.1.36 // indirect
+	go.viam.com/utils v0.1.37 // indirect
 	goji.io v2.0.2+incompatible // indirect
 	golang.org/x/crypto v0.9.0 // indirect
 	golang.org/x/exp v0.0.0-20230321023759-10a507213a29 // indirect

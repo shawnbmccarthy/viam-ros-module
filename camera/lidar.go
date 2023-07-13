@@ -1,4 +1,4 @@
-package lidar
+package camera
 
 import (
 	"context"
@@ -6,7 +6,7 @@ import (
 	"github.com/bluenviron/goroslib/v2"
 	"github.com/bluenviron/goroslib/v2/pkg/msgs/sensor_msgs"
 	"github.com/edaniels/golog"
-	"github.com/shawnbmccarthy/viam-yahboom-transbot-ros/utils"
+	"github.com/shawnbmccarthy/viam-ros-module/utils"
 	"github.com/viamrobotics/gostream"
 	"go.viam.com/rdk/components/camera"
 	"go.viam.com/rdk/pointcloud"

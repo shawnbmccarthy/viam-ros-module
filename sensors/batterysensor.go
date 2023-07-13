@@ -5,7 +5,7 @@ import (
 	"errors"
 	"github.com/bluenviron/goroslib/v2"
 	"github.com/edaniels/golog"
-	"github.com/shawnbmccarthy/viam-yahboom-transbot-ros/pkg/msgs/transbot_msgs"
+	"github.com/shawnbmccarthy/viam-ros-module/pkg/msgs/transbot_msgs"
 	"go.viam.com/rdk/components/sensor"
 	"go.viam.com/rdk/resource"
 	"strings"
