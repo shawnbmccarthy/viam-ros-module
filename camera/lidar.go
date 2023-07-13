@@ -118,8 +118,7 @@ func (l *ROSLidar) Reconfigure(
 }
 
 func (l *ROSLidar) processMessage(msg *sensor_msgs.LaserScan) {
-	msg1 := l.laserProjection.ProjectLaser(msg, -1.0, utils.DEFAULT)
-	l.msg = &msg1
+	l.msg = l.laserProjection.ProjectLaser(msg, -1.0, utils.DEFAULT)
 }
 
 func (l *ROSLidar) Projector(ctx context.Context) (transform.Projector, error) {

@@ -39,8 +39,8 @@ func (lp *LaserProjection) ProjectLaser(
 	scanIn *sensor_msgs.LaserScan,
 	rangeCutoff float64,
 	channelOptions ChannelOption,
-) sensor_msgs.PointCloud2 {
-	pointCloudMsg := sensor_msgs.PointCloud2{}
+) *sensor_msgs.PointCloud2 {
+	pointCloudMsg := &sensor_msgs.PointCloud2{}
 	scanInRangeSz := len(scanIn.Ranges) // need to sort
 
 	// TODO: is this clean?
