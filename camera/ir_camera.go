@@ -16,7 +16,7 @@ import (
 	"sync"
 )
 
-var IrCameraModel = resource.NewModel("viamlabs", "ros", "lidar")
+var IrCameraModel = resource.NewModel("viamlabs", "ros", "ircamera")
 
 type IrCamera struct {
 	resource.Named
