@@ -121,7 +121,13 @@ func (rs *RosMediaSource) updateImageFromRosMsg(msg *sensor_msgs.Image) {
 	rs.mu.Lock()
 	defer rs.mu.Unlock()
 	var err error
+
 	if msg != nil || len(msg.Data) > 0 {
+		//TODO: really bad loop
+		for i := 0; i < len(msg.Data); {
+			msg.Data[i], msg.Data[i+2] = msg.Data[i+2], msg.Data[i]
+			i = i + 3
+		}
 		rs.msg, err = rimage.DecodeImage(rs.ctx, msg.Data, "png")
 		if err != nil {
 			rs.logger.Errorf("Cannot decode immage %v", err)
