@@ -9,6 +9,7 @@ import (
 	"github.com/edaniels/golog"
 	viamcamera "go.viam.com/rdk/components/camera"
 	"go.viam.com/rdk/resource"
+	"go.viam.com/rdk/rimage"
 	"image"
 	"strings"
 	"sync"
@@ -64,11 +65,11 @@ func (rs *RosMediaSource) Reconfigure(
 	}
 
 	if len(strings.TrimSpace(rs.topic)) == 0 {
-		return errors.New("ROS topic must be set to valid imu topic")
+		return errors.New("ROS topic must be set to valid camera topic")
 	}
 
 	if len(strings.TrimSpace(rs.nodeName)) == 0 {
-		rs.nodeName = "viam_camera_node"
+		return errors.New("ROS node name must be set for camera node")
 	}
 
 	if rs.subscriber != nil {
@@ -112,7 +113,11 @@ func (rs *RosMediaSource) Close(_ context.Context) error {
 func (rs *RosMediaSource) updateImageFromRosMsg(msg sensor_msgs.Image) {
 	rs.mu.Lock()
 	defer rs.mu.Unlock()
-
+	var err error
+	rs.msg, err = rimage.DecodeImage(nil, msg.Data, "png")
+	if err != nil {
+		rs.logger.Errorf("Cannot decode immage %v", err)
+	}
 }
 
 type RosMediaSourceConfig struct {
