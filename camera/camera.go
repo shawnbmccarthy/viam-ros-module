@@ -28,6 +28,7 @@ func NewRosMediaSource(
 	}
 
 	if err := rms.Reconfigure(ctx, deps, conf); err != nil {
+		logger.Error("problem with reconfigure")
 		return nil, err
 	}
 	return rms, nil
@@ -94,6 +95,7 @@ func (rs *RosMediaSource) Reconfigure(
 		Callback: rs.updateImageFromRosMsg,
 	})
 	if err != nil {
+		rs.logger.Error("problem creating subscriber")
 		return err
 	}
 	return nil
