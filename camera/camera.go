@@ -96,7 +96,7 @@ func (rs *RosMediaSource) Reconfigure(
 		Callback: rs.updateImageFromRosMsg,
 	})
 	if err != nil {
-		rs.logger.Error("problem creating subscriber")
+		rs.logger.Errorf("problem creating subscriber: %v", err)
 		return err
 	}
 	return nil
@@ -110,7 +110,7 @@ func (rs *RosMediaSource) Close(_ context.Context) error {
 	return nil
 }
 
-func (rs *RosMediaSource) updateImageFromRosMsg(msg sensor_msgs.Image) {
+func (rs *RosMediaSource) updateImageFromRosMsg(msg *sensor_msgs.Image) {
 	rs.mu.Lock()
 	defer rs.mu.Unlock()
 	var err error
