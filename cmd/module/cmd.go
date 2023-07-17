@@ -39,7 +39,7 @@ func realMain() error {
 	err = myMod.AddModelFromRegistry(ctx, viamsensor.API, sensors.EditionModel)
 	err = myMod.AddModelFromRegistry(ctx, viambase.API, base.TrackedBaseModel)
 	err = myMod.AddModelFromRegistry(ctx, viamcamera.API, camera.ROSLidarModel)
-	err = myMod.AddModelFromRegistry(ctx, viamcamera.API, camera.IrCameraModel)
+	err = myMod.AddModelFromRegistry(ctx, viamcamera.API, camera.RosCameraModel)
 
 	err = myMod.Start(ctx)
 	defer myMod.Close(ctx)
