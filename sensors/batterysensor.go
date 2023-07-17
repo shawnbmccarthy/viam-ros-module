@@ -130,6 +130,5 @@ func (b *BatterySensor) Readings(
 func (b *BatterySensor) Close(_ context.Context) error {
 	err := b.subscriber.Close()
 	err = b.node.Close()
-
 	return err
 }

@@ -25,6 +25,7 @@ func NewRosMediaSource(
 ) (*RosMediaSource, error) {
 	rms := &RosMediaSource{
 		Named:  conf.ResourceName().AsNamed(),
+		ctx:    ctx,
 		logger: logger,
 	}
 
@@ -38,6 +39,7 @@ func NewRosMediaSource(
 type RosMediaSource struct {
 	resource.Named
 
+	ctx        context.Context
 	logger     golog.Logger
 	mu         sync.Mutex
 	msg        image.Image
@@ -103,6 +105,7 @@ func (rs *RosMediaSource) Reconfigure(
 		rs.logger.Errorf("problem creating subscriber: %v", err)
 		return err
 	}
+
 	return nil
 }
 
@@ -119,7 +122,7 @@ func (rs *RosMediaSource) updateImageFromRosMsg(msg *sensor_msgs.Image) {
 	defer rs.mu.Unlock()
 	var err error
 	if msg != nil || len(msg.Data) > 0 {
-		rs.msg, err = rimage.DecodeImage(nil, msg.Data, "png")
+		rs.msg, err = rimage.DecodeImage(rs.ctx, msg.Data, "png")
 		if err != nil {
 			rs.logger.Errorf("Cannot decode immage %v", err)
 		}
