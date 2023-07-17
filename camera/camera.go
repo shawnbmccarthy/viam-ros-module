@@ -150,6 +150,7 @@ func NewRosCamera(
 ) (viamcamera.Camera, error) {
 	rosVideoSrc, err := NewRosMediaSource(ctx, deps, conf, logger)
 	if err != nil {
+		logger.Error("problem creating ROS media source")
 		return nil, err
 	}
 
@@ -161,6 +162,7 @@ func NewRosCamera(
 		viamcamera.ColorStream,
 	)
 	if err != nil {
+		logger.Error("problem created new video source")
 		return nil, err
 	}
 	return viamcamera.FromVideoSource(conf.ResourceName(), videoSrc), nil
