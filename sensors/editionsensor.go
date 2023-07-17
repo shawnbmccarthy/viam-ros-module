@@ -71,7 +71,7 @@ func (e *EditionSensor) Reconfigure(
 	}
 
 	if len(strings.TrimSpace(e.topic)) == 0 {
-		return errors.New("ROS topic must be set to valid imu topic")
+		return errors.New("ROS topic must be set to valid sensor topic")
 	}
 
 	if len(strings.TrimSpace(e.nodeName)) == 0 {

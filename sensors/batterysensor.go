@@ -71,7 +71,7 @@ func (b *BatterySensor) Reconfigure(
 	}
 
 	if len(strings.TrimSpace(b.topic)) == 0 {
-		return errors.New("ROS topic must be set to valid imu topic")
+		return errors.New("ROS topic must be set to valid sensor topic")
 	}
 
 	if len(strings.TrimSpace(b.nodeName)) == 0 {

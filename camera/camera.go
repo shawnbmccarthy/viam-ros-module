@@ -88,6 +88,10 @@ func (rs *RosMediaSource) Reconfigure(
 		Name:          rs.nodeName,
 		MasterAddress: rs.primaryUri,
 	})
+	if err != nil {
+		rs.logger.Errorf("problem creating node: %v", err)
+		return err
+	}
 
 	// publisher for twist messages
 	rs.subscriber, err = goroslib.NewSubscriber(goroslib.SubscriberConf{
