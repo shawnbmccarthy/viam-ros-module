@@ -9,7 +9,6 @@ import (
 	"github.com/edaniels/golog"
 	viamcamera "go.viam.com/rdk/components/camera"
 	"go.viam.com/rdk/resource"
-	"go.viam.com/rdk/rimage"
 	"image"
 	"image/color"
 	"strings"
@@ -153,7 +152,7 @@ func (rs *RosMediaSource) Close(_ context.Context) error {
 func (rs *RosMediaSource) updateImageFromRosMsg(msg *sensor_msgs.Image) {
 	rs.mu.Lock()
 	defer rs.mu.Unlock()
-	var err error
+	//var err error
 
 	if msg != nil || len(msg.Data) > 0 {
 		//TODO: really bad loop
@@ -163,10 +162,10 @@ func (rs *RosMediaSource) updateImageFromRosMsg(msg *sensor_msgs.Image) {
 		}*/
 		rs.msg = &RosImage{height: int(msg.Height), width: int(msg.Width), step: int(msg.Step), data: msg.Data}
 
-		rs.img, err = rimage.EncodeImage(rs.ctx, rs.msg, "")
+		/*rs.img, err = rimage.EncodeImage(rs.ctx, rs.msg, "")
 		if err != nil {
 			rs.logger.Errorf("Cannot decode immage %v", err)
-		}
+		}*/
 	} else {
 		rs.logger.Warn("ROS image data invalid")
 	}
