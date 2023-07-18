@@ -25,3 +25,4 @@ go.work
 # module binary output
 viamrosmodule
 rosmodule
+imagetest

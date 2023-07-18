@@ -39,7 +39,7 @@ func (rosImage *RosImage) At(x, y int) color.Color {
 	bytesPerPixel := rosImage.step / rosImage.width
 	pixelOffset := rosImage.width*x + y
 	byteOffset := bytesPerPixel * pixelOffset
-
+	
 	return color.RGBA{
 		B: rosImage.data[byteOffset],
 		G: rosImage.data[byteOffset+1],
@@ -142,7 +142,11 @@ func (rs *RosMediaSource) Reconfigure(
 }
 
 func (rs *RosMediaSource) Read(_ context.Context) (image.Image, func(), error) {
-	return rs.msg, func() {}, nil
+	if rs.msg != nil {
+		return rs.msg, func() {}, nil
+	} else {
+		return nil, nil, fmt.Errorf("image is not ready")
+	}
 }
 
 func (rs *RosMediaSource) Close(_ context.Context) error {
@@ -155,17 +159,7 @@ func (rs *RosMediaSource) updateImageFromRosMsg(msg *sensor_msgs.Image) {
 	//var err error
 
 	if msg != nil || len(msg.Data) > 0 {
-		//TODO: really bad loop
-		/*for i := 0; i < len(msg.Data); {
-			msg.Data[i], msg.Data[i+2] = msg.Data[i+2], msg.Data[i]
-			i = i + 3
-		}*/
 		rs.msg = &RosImage{height: int(msg.Height), width: int(msg.Width), step: int(msg.Step), data: msg.Data}
-
-		/*rs.img, err = rimage.EncodeImage(rs.ctx, rs.msg, "")
-		if err != nil {
-			rs.logger.Errorf("Cannot decode immage %v", err)
-		}*/
 	} else {
 		rs.logger.Warn("ROS image data invalid")
 	}
