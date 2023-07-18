@@ -11,11 +11,43 @@ import (
 	"go.viam.com/rdk/resource"
 	"go.viam.com/rdk/rimage"
 	"image"
+	"image/color"
 	"strings"
 	"sync"
 )
 
 var RosCameraModel = resource.NewModel("viamlabs", "ros", "camera")
+
+type RosImage struct {
+	width  int
+	height int
+	step   int
+	data   []byte
+}
+
+func (rosImage *RosImage) ColorModel() color.Model {
+	return color.RGBAModel
+}
+
+func (rosImage *RosImage) Bounds() image.Rectangle {
+	return image.Rectangle{
+		Min: image.Point{X: 0, Y: 0},
+		Max: image.Point{X: rosImage.width, Y: rosImage.height},
+	}
+}
+
+func (rosImage *RosImage) At(x, y int) color.Color {
+	bytesPerPixel := rosImage.step / rosImage.width
+	pixelOffset := rosImage.width*x + y
+	byteOffset := bytesPerPixel * pixelOffset
+
+	return color.RGBA{
+		B: rosImage.data[byteOffset],
+		G: rosImage.data[byteOffset+1],
+		R: rosImage.data[byteOffset+2],
+		A: 0,
+	}
+}
 
 func NewRosMediaSource(
 	ctx context.Context,
@@ -42,7 +74,8 @@ type RosMediaSource struct {
 	ctx        context.Context
 	logger     golog.Logger
 	mu         sync.Mutex
-	msg        image.Image
+	msg        *RosImage
+	img        []byte
 	nodeName   string
 	primaryUri string
 	topic      string
@@ -124,11 +157,13 @@ func (rs *RosMediaSource) updateImageFromRosMsg(msg *sensor_msgs.Image) {
 
 	if msg != nil || len(msg.Data) > 0 {
 		//TODO: really bad loop
-		for i := 0; i < len(msg.Data); {
+		/*for i := 0; i < len(msg.Data); {
 			msg.Data[i], msg.Data[i+2] = msg.Data[i+2], msg.Data[i]
 			i = i + 3
-		}
-		rs.msg, err = rimage.DecodeImage(rs.ctx, msg.Data, "png")
+		}*/
+		rs.msg = &RosImage{height: int(msg.Height), width: int(msg.Width), step: int(msg.Step), data: msg.Data}
+
+		rs.img, err = rimage.EncodeImage(rs.ctx, rs.msg, "")
 		if err != nil {
 			rs.logger.Errorf("Cannot decode immage %v", err)
 		}
