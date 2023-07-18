@@ -32,9 +32,9 @@ func (di *DumbImage) At(x, y int) color.Color {
 
 	fmt.Printf("(%d,%d) -> Bytes/Pixel: %d, Pixel Offset: %d, Byte Offset: %d, ", x, y, bytesPerPixel, pixelOffset, byteOffset)
 	return color.RGBA{
-		R: di.data[byteOffset],
+		R: di.data[byteOffset+2],
 		G: di.data[byteOffset+1],
-		B: di.data[byteOffset+2],
+		B: di.data[byteOffset],
 		A: 0,
 	}
 }

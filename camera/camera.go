@@ -31,7 +31,7 @@ func (rosImage *RosImage) ColorModel() color.Model {
 func (rosImage *RosImage) Bounds() image.Rectangle {
 	return image.Rectangle{
 		Min: image.Point{X: 0, Y: 0},
-		Max: image.Point{X: rosImage.width, Y: rosImage.height},
+		Max: image.Point{X: rosImage.height, Y: rosImage.width},
 	}
 }
 
@@ -150,6 +150,7 @@ func (rs *RosMediaSource) Read(_ context.Context) (image.Image, func(), error) {
 }
 
 func (rs *RosMediaSource) Close(_ context.Context) error {
+	// gets closed when stream is closed
 	return nil
 }
 
