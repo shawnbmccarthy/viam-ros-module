@@ -41,9 +41,9 @@ func (rosImage *RosImage) At(x, y int) color.Color {
 	byteOffset := bytesPerPixel * pixelOffset
 	
 	return color.RGBA{
-		R: rosImage.data[byteOffset],
+		R: rosImage.data[byteOffset+2],
 		G: rosImage.data[byteOffset+1],
-		B: rosImage.data[byteOffset+2],
+		B: rosImage.data[byteOffset],
 		A: 0,
 	}
 }
