@@ -2,20 +2,23 @@ package main
 
 import (
 	"fmt"
+	"github.com/shawnbmccarthy/viam-ros-module/utils"
 	"image"
 	"image/color"
-	"github.com/shawnbmccarthy/viam-ros-module/utils"
+	"image/jpeg"
+	"os"
 )
 
 type DumbImage struct {
-	data []byte
-	width int
+	data   []byte
+	width  int
 	height int
-	step int
+	step   int
 }
 
 func (di *DumbImage) ColorModel() color.Model {
 	return color.RGBAModel
+	color
 }
 
 func (di *DumbImage) Bounds() image.Rectangle {
@@ -27,15 +30,14 @@ func (di *DumbImage) Bounds() image.Rectangle {
 
 func (di *DumbImage) At(x, y int) color.Color {
 	bytesPerPixel := di.step / di.width
-	pixelOffset := di.width * x + y
+	pixelOffset := di.width*x + y
 	byteOffset := bytesPerPixel * pixelOffset
 
-	fmt.Printf("(%d,%d) -> Bytes/Pixel: %d, Pixel Offset: %d, Byte Offset: %d, ", x, y, bytesPerPixel, pixelOffset, byteOffset)
 	return color.RGBA{
 		R: di.data[byteOffset+2],
 		G: di.data[byteOffset+1],
 		B: di.data[byteOffset],
-		A: 0,
+		A: 255,
 	}
 }
 
@@ -44,10 +46,26 @@ func main() {
 
 	for x := 0; x < utils.Height; x++ {
 		for y := 0; y < utils.Width; y++ {
-			color := di.At(x, y)
-			fmt.Printf("%v\n", color)
+			di.At(x, y)
+			//fmt.Printf("%v\n", c)
 		}
 	}
 	fmt.Printf("ros image len: %d\n", len(utils.Data))
 	fmt.Printf("ros image height: %d, width: %d, step: %d\n", utils.Height, utils.Width, utils.Step)
+	//img, _, err := image.Decode(bytes.NewReader(utils.Data))
+	//if err != nil {
+	//	fmt.Printf("err: %v", err)
+	//}
+
+	out, _ := os.Create("./dummy_a255.jpg")
+	defer out.Close()
+
+	var opts jpeg.Options
+	opts.Quality = 0
+
+	err := jpeg.Encode(out, &di, &opts)
+	if err != nil {
+		fmt.Printf("err: %v", err)
+	}
+
 }
