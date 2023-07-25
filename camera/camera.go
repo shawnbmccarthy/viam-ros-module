@@ -13,6 +13,7 @@ import (
 	"image"
 	"image/color"
 	"image/png"
+	"os"
 	"strings"
 	"sync"
 )
@@ -129,7 +130,6 @@ func (rs *RosMediaSource) Reconfigure(
 		return err
 	}
 
-	// publisher for twist messages
 	rs.subscriber, err = goroslib.NewSubscriber(goroslib.SubscriberConf{
 		Node:     rs.node,
 		Topic:    rs.topic,
@@ -156,7 +156,6 @@ func (rs *RosMediaSource) Close(_ context.Context) error {
 	return nil
 }
 
-//TODO: HERE
 func (rs *RosMediaSource) updateImageFromRosMsg(msg *sensor_msgs.Image) {
 	rs.mu.Lock()
 	defer rs.mu.Unlock()
@@ -170,10 +169,17 @@ func (rs *RosMediaSource) updateImageFromRosMsg(msg *sensor_msgs.Image) {
 		err = pngEncoder.Encode(&buffer, rs.msg)
 		if err != nil {
 			rs.logger.Errorf("image encoder error: %v", err)
+		} else {
+			f, ferr := os.CreateTemp("/tmp", "viam-image")
+			if ferr == nil {
+				f.Write(buffer.Bytes())
+			}
 		}
 		rs.img, err = png.Decode(&buffer)
 		if err != nil {
 			rs.logger.Errorf("image decoder error: %v", err)
+		} else {
+			rs.logger.Infof("info image: %v", rs.img)
 		}
 	} else {
 		rs.logger.Warn("ROS image data invalid")
