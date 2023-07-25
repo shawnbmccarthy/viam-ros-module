@@ -76,7 +76,7 @@ type RosMediaSource struct {
 	logger     golog.Logger
 	mu         sync.Mutex
 	msg        *RosImage
-	img        []byte
+	img        image.Image
 	nodeName   string
 	primaryUri string
 	topic      string
@@ -143,20 +143,9 @@ func (rs *RosMediaSource) Reconfigure(
 	return nil
 }
 
-//TODO: HERE Clean this up
 func (rs *RosMediaSource) Read(_ context.Context) (image.Image, func(), error) {
-	if rs.msg != nil {
-		buffer := bytes.Buffer{}
-		pngEncoder := png.Encoder{CompressionLevel: png.BestCompression}
-		err := pngEncoder.Encode(&buffer, rs.msg)
-		if err != nil {
-			return nil, nil, fmt.Errorf("image error")
-		}
-		img, err := png.Decode(&buffer)
-		if err != nil {
-			return nil, nil, fmt.Errorf("image error")
-		}
-		return img, func() {}, nil
+	if rs.img != nil {
+		return rs.img, func() {}, nil
 	} else {
 		return nil, nil, fmt.Errorf("image is not ready")
 	}
@@ -175,6 +164,17 @@ func (rs *RosMediaSource) updateImageFromRosMsg(msg *sensor_msgs.Image) {
 
 	if msg != nil || len(msg.Data) > 0 {
 		rs.msg = &RosImage{height: int(msg.Height), width: int(msg.Width), step: int(msg.Step), data: msg.Data}
+		buffer := bytes.Buffer{}
+		pngEncoder := png.Encoder{CompressionLevel: png.BestCompression}
+		var err error
+		err = pngEncoder.Encode(&buffer, rs.msg)
+		if err != nil {
+			rs.logger.Errorf("image encoder error: %v", err)
+		}
+		rs.img, err = png.Decode(&buffer)
+		if err != nil {
+			rs.logger.Errorf("image decoder error: %v", err)
+		}
 	} else {
 		rs.logger.Warn("ROS image data invalid")
 	}
