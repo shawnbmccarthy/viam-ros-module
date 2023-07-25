@@ -1,6 +1,7 @@
 package camera
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -11,6 +12,7 @@ import (
 	"go.viam.com/rdk/resource"
 	"image"
 	"image/color"
+	"image/png"
 	"strings"
 	"sync"
 )
@@ -141,9 +143,20 @@ func (rs *RosMediaSource) Reconfigure(
 	return nil
 }
 
+//TODO: HERE Clean this up
 func (rs *RosMediaSource) Read(_ context.Context) (image.Image, func(), error) {
 	if rs.msg != nil {
-		return rs.msg, func() {}, nil
+		buffer := bytes.Buffer{}
+		pngEncoder := png.Encoder{CompressionLevel: png.BestCompression}
+		err := pngEncoder.Encode(&buffer, rs.msg)
+		if err != nil {
+			return nil, nil, fmt.Errorf("image error")
+		}
+		img, err := png.Decode(&buffer)
+		if err != nil {
+			return nil, nil, fmt.Errorf("image error")
+		}
+		return img, func() {}, nil
 	} else {
 		return nil, nil, fmt.Errorf("image is not ready")
 	}
@@ -154,6 +167,7 @@ func (rs *RosMediaSource) Close(_ context.Context) error {
 	return nil
 }
 
+//TODO: HERE
 func (rs *RosMediaSource) updateImageFromRosMsg(msg *sensor_msgs.Image) {
 	rs.mu.Lock()
 	defer rs.mu.Unlock()
