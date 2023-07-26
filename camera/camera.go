@@ -164,7 +164,7 @@ func (rs *RosMediaSource) updateImageFromRosMsg(msg *sensor_msgs.Image) {
 		return
 	}
 
-	rs.logger.Infof("message data: %v", msg.Data)
+	//rs.logger.Infof("message data: %v", msg.Data)
 
 	var newData bytes.Buffer
 	newData.Write(msg.Data)
