@@ -12,6 +12,7 @@ import (
 	"go.viam.com/rdk/resource"
 	"image"
 	"image/color"
+	"image/png"
 	"strings"
 	"sync"
 )
@@ -168,6 +169,12 @@ func (rs *RosMediaSource) updateImageFromRosMsg(msg *sensor_msgs.Image) {
 
 	var newData bytes.Buffer
 	newData.Write(msg.Data)
+	rs.img = &RosImage{height: int(msg.Height), width: int(msg.Width), step: int(msg.Step), data: newData.Bytes()}
+	pngEncoder := png.Encoder{CompressionLevel: png.BestCompression}
+	err := pngEncoder.Encode(&newData, rs.img)
+	if err != nil {
+		rs.logger.Errorf("image encoder error: %v", err)
+	}
 	rs.img = &RosImage{height: int(msg.Height), width: int(msg.Width), step: int(msg.Step), data: newData.Bytes()}
 		/*
 		rs.msg = &RosImage{height: int(msg.Height), width: int(msg.Width), step: int(msg.Step), data: msg.Data}
