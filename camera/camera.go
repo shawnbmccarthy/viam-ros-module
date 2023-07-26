@@ -73,7 +73,6 @@ type RosMediaSource struct {
 	ctx        context.Context
 	logger     golog.Logger
 	mu         sync.Mutex
-	//msg        *RosImage
 	img        image.Image
 	nodeName   string
 	primaryUri string
@@ -149,14 +148,10 @@ func (rs *RosMediaSource) Read(_ context.Context) (image.Image, func(), error) {
 }
 
 func (rs *RosMediaSource) Close(_ context.Context) error {
-	// gets closed when stream is closed
 	return nil
 }
 
 func (rs *RosMediaSource) updateImageFromRosMsg(msg *sensor_msgs.Image) {
-	rs.mu.Lock()
-	defer rs.mu.Unlock()
-	//var err error
 
 	if msg == nil || len(msg.Data) == 0 {
 		rs.logger.Warn("ROS image data not ready")
@@ -164,7 +159,6 @@ func (rs *RosMediaSource) updateImageFromRosMsg(msg *sensor_msgs.Image) {
 	}
 
 	ri := RosImage{height: int(msg.Height), width: int(msg.Width), step: int(msg.Step), data: msg.Data}
-
 	newImage := image.NewRGBA(ri.Bounds())
 	for x := 0; x<int(msg.Height); x++ {
 		for y := 0; y < int(msg.Width); y++ {
