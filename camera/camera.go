@@ -1,7 +1,6 @@
 package camera
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -160,13 +159,11 @@ func (rs *RosMediaSource) updateImageFromRosMsg(msg *sensor_msgs.Image) {
 	//var err error
 
 	if msg == nil || len(msg.Data) == 0 {
-		rs.logger.Warn("ROS image data invalid")
+		rs.logger.Warn("ROS image data not ready")
 		return
 	}
 
-	var newData bytes.Buffer
-	newData.Write(msg.Data)
-	ri := RosImage{height: int(msg.Height), width: int(msg.Width), step: int(msg.Step), data: newData.Bytes()}
+	ri := RosImage{height: int(msg.Height), width: int(msg.Width), step: int(msg.Step), data: msg.Data}
 
 	newImage := image.NewRGBA(ri.Bounds())
 	for x := 0; x<int(msg.Height); x++ {
@@ -175,26 +172,6 @@ func (rs *RosMediaSource) updateImageFromRosMsg(msg *sensor_msgs.Image) {
 		}
 	}
 	rs.img = newImage
-
-		/*
-		rs.msg = &RosImage{height: int(msg.Height), width: int(msg.Width), step: int(msg.Step), data: msg.Data}
-		buffer := bytes.Buffer{}
-		pngEncoder := png.Encoder{CompressionLevel: png.BestCompression}
-		var err error
-		err = pngEncoder.Encode(&buffer, rs.msg)
-		rs.logger.Infof("buffer data: %v", buffer.Bytes())
-		if err != nil {
-			rs.logger.Errorf("image encoder error: %v", err)
-		}
-
-		rs.img, err = png.Decode(&buffer)
-		if err != nil {
-			rs.logger.Errorf("image decoder error: %v", err)
-		} else {
-			rs.logger.Infof("info image: %v", rs.img)
-		}
-		*/
-
 }
 
 type RosMediaSourceConfig struct {
