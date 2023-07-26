@@ -169,8 +169,8 @@ func (rs *RosMediaSource) updateImageFromRosMsg(msg *sensor_msgs.Image) {
 	ri := RosImage{height: int(msg.Height), width: int(msg.Width), step: int(msg.Step), data: newData.Bytes()}
 
 	newImage := image.NewRGBA(ri.Bounds())
-	for x := 0; x<int(msg.Width); x++ {
-		for y := 0; y < int(msg.Height); y++ {
+	for x := 0; x<int(msg.Height); x++ {
+		for y := 0; y < int(msg.Width); y++ {
 			newImage.Set(x,y,ri.At(x,y))
 		}
 	}
