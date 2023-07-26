@@ -12,7 +12,6 @@ import (
 	"go.viam.com/rdk/resource"
 	"image"
 	"image/color"
-	"image/png"
 	"strings"
 	"sync"
 )
@@ -37,7 +36,7 @@ func (rosImage *RosImage) Bounds() image.Rectangle {
 	}
 }
 
-func (rosImage *RosImage) At(x, y int) color.Color {
+func (rosImage *RosImage) At(x, y int) color.RGBA {
 	bytesPerPixel := rosImage.step / rosImage.width
 	pixelOffset := rosImage.width*x + y
 	byteOffset := bytesPerPixel * pixelOffset
@@ -165,17 +164,18 @@ func (rs *RosMediaSource) updateImageFromRosMsg(msg *sensor_msgs.Image) {
 		return
 	}
 
-	//rs.logger.Infof("message data: %v", msg.Data)
-
 	var newData bytes.Buffer
 	newData.Write(msg.Data)
-	rs.img = &RosImage{height: int(msg.Height), width: int(msg.Width), step: int(msg.Step), data: newData.Bytes()}
-	pngEncoder := png.Encoder{CompressionLevel: png.BestCompression}
-	err := pngEncoder.Encode(&newData, rs.img)
-	if err != nil {
-		rs.logger.Errorf("image encoder error: %v", err)
+	ri := RosImage{height: int(msg.Height), width: int(msg.Width), step: int(msg.Step), data: newData.Bytes()}
+
+	newImage := image.NewRGBA(ri.Bounds())
+	for x := 0; x<int(msg.Width); x++ {
+		for y := 0; y < int(msg.Height); y++ {
+			newImage.Set(x,y,ri.At(x,y))
+		}
 	}
-	rs.img = &RosImage{height: int(msg.Height), width: int(msg.Width), step: int(msg.Step), data: newData.Bytes()}
+	rs.img = newImage
+
 		/*
 		rs.msg = &RosImage{height: int(msg.Height), width: int(msg.Width), step: int(msg.Step), data: msg.Data}
 		buffer := bytes.Buffer{}

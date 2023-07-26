@@ -37,7 +37,7 @@ func (di *DumbImage) At(x, y int) color.Color {
 		R: di.data[byteOffset+2],
 		G: di.data[byteOffset+1],
 		B: di.data[byteOffset],
-		A: 255,
+		A: 0,
 	}
 }
 
