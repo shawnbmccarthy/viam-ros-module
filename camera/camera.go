@@ -162,11 +162,13 @@ func (rs *RosMediaSource) updateImageFromRosMsg(msg *sensor_msgs.Image) {
 	//var err error
 
 	if msg != nil || len(msg.Data) > 0 {
+		rs.logger.Infof("message data: %v", msg.Data)
 		rs.msg = &RosImage{height: int(msg.Height), width: int(msg.Width), step: int(msg.Step), data: msg.Data}
 		buffer := bytes.Buffer{}
 		pngEncoder := png.Encoder{CompressionLevel: png.BestCompression}
 		var err error
 		err = pngEncoder.Encode(&buffer, rs.msg)
+		rs.logger.Infof("buffer data: %v", buffer.Bytes())
 		if err != nil {
 			rs.logger.Errorf("image encoder error: %v", err)
 		} else {
