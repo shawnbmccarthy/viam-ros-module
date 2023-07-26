@@ -12,8 +12,6 @@ import (
 	"go.viam.com/rdk/resource"
 	"image"
 	"image/color"
-	"image/png"
-	"os"
 	"strings"
 	"sync"
 )
@@ -76,7 +74,7 @@ type RosMediaSource struct {
 	ctx        context.Context
 	logger     golog.Logger
 	mu         sync.Mutex
-	msg        *RosImage
+	//msg        *RosImage
 	img        image.Image
 	nodeName   string
 	primaryUri string
@@ -161,8 +159,17 @@ func (rs *RosMediaSource) updateImageFromRosMsg(msg *sensor_msgs.Image) {
 	defer rs.mu.Unlock()
 	//var err error
 
-	if msg != nil || len(msg.Data) > 0 {
-		rs.logger.Infof("message data: %v", msg.Data)
+	if msg == nil || len(msg.Data) == 0 {
+		rs.logger.Warn("ROS image data invalid")
+		return
+	}
+
+	rs.logger.Infof("message data: %v", msg.Data)
+
+	var newData bytes.Buffer
+	newData.Write(msg.Data)
+	rs.img = &RosImage{height: int(msg.Height), width: int(msg.Width), step: int(msg.Step), data: newData.Bytes()}
+		/*
 		rs.msg = &RosImage{height: int(msg.Height), width: int(msg.Width), step: int(msg.Step), data: msg.Data}
 		buffer := bytes.Buffer{}
 		pngEncoder := png.Encoder{CompressionLevel: png.BestCompression}
@@ -171,27 +178,16 @@ func (rs *RosMediaSource) updateImageFromRosMsg(msg *sensor_msgs.Image) {
 		rs.logger.Infof("buffer data: %v", buffer.Bytes())
 		if err != nil {
 			rs.logger.Errorf("image encoder error: %v", err)
-		} else {
-			f, fileErr := os.Create("/tmp/viam-ros.png")
-			if fileErr != nil {
-				rs.logger.Errorf("failed to create file: %v", fileErr)
-			}
-			var bytesRead int
-			bytesRead, fileErr = f.Write(buffer.Bytes())
-			if fileErr != nil {
-				rs.logger.Errorf("failed to write to file: %v", fileErr)
-			}
-			rs.logger.Infof("wrote %d bytes to file: %s", bytesRead, f.Name())
 		}
+
 		rs.img, err = png.Decode(&buffer)
 		if err != nil {
 			rs.logger.Errorf("image decoder error: %v", err)
 		} else {
 			rs.logger.Infof("info image: %v", rs.img)
 		}
-	} else {
-		rs.logger.Warn("ROS image data invalid")
-	}
+		*/
+
 }
 
 type RosMediaSourceConfig struct {
