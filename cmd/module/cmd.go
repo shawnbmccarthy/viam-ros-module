@@ -31,9 +31,6 @@ func realMain() error {
 		return err
 	}
 
-	/*
-	 * add modules here (TBD)
-	 */
 	err = myMod.AddModelFromRegistry(ctx, viammovementsensor.API, imu.Model)
 	err = myMod.AddModelFromRegistry(ctx, viamsensor.API, sensors.BatteryModel)
 	err = myMod.AddModelFromRegistry(ctx, viamsensor.API, sensors.EditionModel)
@@ -46,6 +43,7 @@ func realMain() error {
 	if err != nil {
 		return err
 	}
+
 	<-ctx.Done()
 	return nil
 }

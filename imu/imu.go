@@ -174,7 +174,6 @@ func (r *RosImu) CompassHeading(
 	ctx context.Context,
 	extra map[string]interface{},
 ) (float64, error) {
-	// GPS - not supported
 	return 0, movementsensor.ErrMethodUnimplementedCompassHeading
 }
 
@@ -183,7 +182,7 @@ func (r *RosImu) Orientation(
 	extra map[string]interface{},
 ) (spatialmath.Orientation, error) {
 	// IMU
-	return nil, errors.New("need to do conversion - I am lazy")
+	return nil, errors.New("conversion not supported at this time")
 }
 
 func (r *RosImu) Properties(

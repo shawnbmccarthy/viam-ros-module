@@ -130,6 +130,5 @@ func (e *EditionSensor) Readings(
 func (e *EditionSensor) Close(_ context.Context) error {
 	err := e.subscriber.Close()
 	err = e.node.Close()
-
 	return err
 }
