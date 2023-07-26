@@ -170,10 +170,16 @@ func (rs *RosMediaSource) updateImageFromRosMsg(msg *sensor_msgs.Image) {
 		if err != nil {
 			rs.logger.Errorf("image encoder error: %v", err)
 		} else {
-			f, ferr := os.CreateTemp("/tmp", "viam-image")
-			if ferr == nil {
-				f.Write(buffer.Bytes())
+			f, fileErr := os.Create("/tmp/viam-ros.png")
+			if fileErr != nil {
+				rs.logger.Errorf("failed to create file: %v", fileErr)
 			}
+			var bytesRead int
+			bytesRead, fileErr = f.Write(buffer.Bytes())
+			if fileErr != nil {
+				rs.logger.Errorf("failed to write to file: %v", fileErr)
+			}
+			rs.logger.Infof("wrote %d bytes to file: %s", bytesRead, f.Name())
 		}
 		rs.img, err = png.Decode(&buffer)
 		if err != nil {
