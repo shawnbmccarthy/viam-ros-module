@@ -10,43 +10,11 @@ import (
 	viamcamera "go.viam.com/rdk/components/camera"
 	"go.viam.com/rdk/resource"
 	"image"
-	"image/color"
 	"strings"
 	"sync"
 )
 
 var RosCameraModel = resource.NewModel("viamlabs", "ros", "camera")
-
-type RosImage struct {
-	width  int
-	height int
-	step   int
-	data   []byte
-}
-
-func (rosImage *RosImage) ColorModel() color.Model {
-	return color.RGBAModel
-}
-
-func (rosImage *RosImage) Bounds() image.Rectangle {
-	return image.Rectangle{
-		Min: image.Point{X: 0, Y: 0},
-		Max: image.Point{X: rosImage.height, Y: rosImage.width},
-	}
-}
-
-func (rosImage *RosImage) At(x, y int) color.RGBA {
-	bytesPerPixel := rosImage.step / rosImage.width
-	pixelOffset := rosImage.width*x + y
-	byteOffset := bytesPerPixel * pixelOffset
-	
-	return color.RGBA{
-		R: rosImage.data[byteOffset+2],
-		G: rosImage.data[byteOffset+1],
-		B: rosImage.data[byteOffset],
-		A: 0,
-	}
-}
 
 func NewRosMediaSource(
 	ctx context.Context,
@@ -166,25 +134,6 @@ func (rs *RosMediaSource) updateImageFromRosMsg(msg *sensor_msgs.Image) {
 		}
 	}
 	rs.img = newImage
-}
-
-type RosMediaSourceConfig struct {
-	NodeName   string `json:"node_name"`
-	PrimaryUri string `json:"primary_uri"`
-	Topic      string `json:"topic"`
-}
-
-func (cfg *RosMediaSourceConfig) Validate(path string) ([]string, error) {
-	// NodeName will get default value if string is empty
-	if cfg.PrimaryUri == "" {
-		return nil, fmt.Errorf(`expected "PrimaryUri" attribute for sensor %q`, path)
-	}
-
-	if cfg.Topic == "" {
-		return nil, fmt.Errorf(`expected "RosTopic" attribute for sensor %q`, path)
-	}
-
-	return nil, nil
 }
 
 func init() {

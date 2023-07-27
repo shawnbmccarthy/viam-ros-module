@@ -61,8 +61,8 @@ func NewRosImu(
 }
 
 func (r *RosImu) Reconfigure(
-	ctx context.Context,
-	deps resource.Dependencies,
+	_ context.Context,
+	_ resource.Dependencies,
 	conf resource.Config,
 ) error {
 	r.mu.Lock()
@@ -100,7 +100,6 @@ func (r *RosImu) Reconfigure(
 		Name:          r.nodeName,
 		MasterAddress: r.primaryUri,
 	})
-
 	if err != nil {
 		return err
 	}
@@ -110,7 +109,6 @@ func (r *RosImu) Reconfigure(
 		Topic:    r.topic,
 		Callback: r.processMessage,
 	})
-
 	if err != nil {
 		return err
 	}

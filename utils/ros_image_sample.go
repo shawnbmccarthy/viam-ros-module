@@ -1,5 +1,8 @@
 package utils
 
+/*
+ * ros image message sample
+ */
 const Height = 480
 const Width  = 640
 const Encoding = "bgr8"
