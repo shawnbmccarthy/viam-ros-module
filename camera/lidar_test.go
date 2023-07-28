@@ -10,14 +10,6 @@ import (
 )
 
 func TestLidarConvert(t *testing.T) {
-	/*
-	data, err := os.ReadFile("data/scan.msg")
-	test.That(t, err, test.ShouldBeNil)
-
-	err = yaml.Unmarshal(data, &msg)
-	test.That(t, err, test.ShouldBeNil)
-	*/
-
 	pc, err := convertMsg(&utils.SampleLaserMsg)
 	test.That(t, err, test.ShouldBeNil)
 
