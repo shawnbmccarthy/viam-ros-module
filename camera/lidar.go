@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"github.com/bluenviron/goroslib/v2"
 	"github.com/bluenviron/goroslib/v2/pkg/msgs/sensor_msgs"
 	"github.com/edaniels/golog"
@@ -13,8 +14,6 @@ import (
 	"go.viam.com/rdk/pointcloud"
 	"go.viam.com/rdk/resource"
 	"go.viam.com/rdk/rimage/transform"
-	"go.viam.com/rdk/spatialmath"
-	"go.viam.com/rdk/utils"
 	"strings"
 	"sync"
 	"time"
@@ -132,59 +131,43 @@ func (l *ROSLidar) Stream(_ context.Context, _ ...gostream.ErrorHandler) (gostre
 }
 
 func (l *ROSLidar) NextPointCloud(_ context.Context) (pointcloud.PointCloud, error) {
-	// TODO: 99% confidence this conversion is wrong
-	l.mu.Lock()
-	defer l.mu.Unlock()
 
-	if l.msg == nil {
+	l.mu.Lock()
+	msg := l.msg
+	l.mu.Unlock()
+
+	if msg == nil {
 		return nil, errors.New("lidar is not ready")
 	}
 
+	return convertMsg(msg)
+}
+
+func convertMsg(msg *sensor_msgs.LaserScan) (pointcloud.PointCloud, error) {
+
 	pc := pointcloud.New()
-	numScans := len(l.msg.Ranges)
-	angleIncrement := l.msg.AngleIncrement
 
-	for i := 0; i < numScans; i++ {
-		lRange := l.msg.Ranges[i]
-		// intesity := l.msg.Intensities[i]
-
-		if lRange < l.msg.RangeMin || lRange > l.msg.RangeMax {
-			// skip this range
+	for i, r := range msg.Ranges {
+		if r < msg.RangeMin || r > msg.RangeMax {
+			// TODO(erh): is this right? needed?
 			continue
 		}
-
-		err := pc.Set(pointFrom(float64(angleIncrement), utils.DegToRad(0), float64(lRange), 255))
+		
+		p := r3.Vector{}
+		ang := msg.AngleMin + (float32(i)*msg.AngleIncrement)
+		p.X = math.Sin(float64(ang)) * float64(r)
+		p.Y = math.Cos(float64(ang)) * float64(r)
+		
+		d := pointcloud.NewBasicData()
+		d.SetIntensity(uint16(msg.Intensities[i]))
+		
+		err := pc.Set(p, d)
 		if err != nil {
 			return nil, err
 		}
-
-		if pc.Size() == 0 {
-			return nil, nil
-		}
-		return pc, nil
 	}
 
 	return pc, nil
-}
-
-func pointFrom(yaw, pitch, distance float64, reflectivity uint8) (r3.Vector, pointcloud.Data) {
-	ea := spatialmath.NewEulerAngles()
-	ea.Yaw = yaw
-	ea.Pitch = pitch
-
-	pose1 := spatialmath.NewPose(r3.Vector{X: 0, Y: 0, Z: 0}, ea)
-	pose2 := spatialmath.NewPoseFromPoint(r3.Vector{X: distance, Y: 0, Z: 0})
-	p := spatialmath.Compose(pose1, pose2).Point()
-
-	// Rotate the point 180 degrees on the y axis. Since lidar data is always 2D, we don't worry
-	// about the Z value.
-	p.X = -p.X
-
-	pos := pointcloud.NewVector(p.X*1000, p.Y*1000, p.Z*1000)
-	d := pointcloud.NewBasicData()
-	d.SetIntensity(uint16(reflectivity) * 255)
-
-	return pos, d
 }
 
 func (l *ROSLidar) Properties(_ context.Context) (camera.Properties, error) {
