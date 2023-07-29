@@ -10,6 +10,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/viamrobotics/gostream v0.0.0-20230620143908-ebc296297d90
 	go.viam.com/rdk v0.4.0
+	go.viam.com/test v1.1.1-0.20220913152726-5da9916c08a2
 )
 
 require (
@@ -38,6 +39,7 @@ require (
 	github.com/desertbit/timer v0.0.0-20180107155436-c41aec40b27f // indirect
 	github.com/disintegration/imaging v1.6.2 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
+	github.com/edaniels/gobag v1.0.7-0.20220607183102-4242cd9e2848 // indirect
 	github.com/edaniels/lidario v0.0.0-20220607182921-5879aa7b96dd // indirect
 	github.com/edaniels/zeroconf v1.0.10 // indirect
 	github.com/erikstmartin/go-testdb v0.0.0-20160219214506-8d10e4a1bae5 // indirect
@@ -93,6 +95,7 @@ require (
 	github.com/montanaflynn/stats v0.7.0 // indirect
 	github.com/muesli/clusters v0.0.0-20200529215643-2700303c1762 // indirect
 	github.com/muesli/kmeans v0.3.1 // indirect
+	github.com/pierrec/lz4 v2.0.5+incompatible // indirect
 	github.com/pion/datachannel v1.5.5 // indirect
 	github.com/pion/dtls/v2 v2.2.7 // indirect
 	github.com/pion/ice/v2 v2.3.5 // indirect
@@ -134,7 +137,6 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.24.0 // indirect
 	go.viam.com/api v0.1.143 // indirect
-	go.viam.com/test v1.1.1-0.20220913152726-5da9916c08a2 // indirect
 	go.viam.com/utils v0.1.37 // indirect
 	goji.io v2.0.2+incompatible // indirect
 	golang.org/x/crypto v0.9.0 // indirect
