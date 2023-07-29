@@ -1,0 +1,13 @@
+{
+    "components" : [
+        {
+            "type" : "camera",
+            "model" : "viamlabs:ros:lidar-dummy",
+            "name" : "foo",
+            "attributes" : {
+                "bag" : "camera/data/lidar_laser_scan.bag"
+            }
+        }
+    ]
+}
+            

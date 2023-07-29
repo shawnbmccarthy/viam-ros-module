@@ -12,6 +12,8 @@ import (
 	"go.viam.com/rdk/config"
 	robotimpl "go.viam.com/rdk/robot/impl"
 	"go.viam.com/rdk/robot/web"
+
+	_ "github.com/shawnbmccarthy/viam-ros-module/camera"
 )
 
 func main() {

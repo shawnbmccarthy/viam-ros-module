@@ -14,12 +14,14 @@ import (
 	"go.viam.com/rdk/pointcloud"
 	"go.viam.com/rdk/resource"
 	"go.viam.com/rdk/rimage/transform"
+	"go.viam.com/rdk/ros"
 	"strings"
 	"sync"
 	"time"
 )
 
 var ROSLidarModel = resource.NewModel("viamlabs", "ros", "lidar")
+var ROSDummyLidarModel = resource.NewModel("viamlabs", "ros", "lidar-dummy")
 
 type ROSLidar struct {
 	resource.Named
@@ -44,6 +46,15 @@ func init() {
 			Constructor: NewROSLidar,
 		},
 	)
+
+	resource.RegisterComponent(
+		camera.API,
+		ROSDummyLidarModel,
+		resource.Registration[camera.Camera, resource.NoNativeConfig]{
+			Constructor: NewROSLidarDummy,
+		},
+	)
+
 }
 
 func NewROSLidar(
@@ -60,6 +71,28 @@ func NewROSLidar(
 	if err := l.Reconfigure(ctx, deps, conf); err != nil {
 		return nil, err
 	}
+
+	return l, nil
+}
+
+func NewROSLidarDummy(
+	ctx context.Context,
+	deps resource.Dependencies,
+	conf resource.Config,
+	logger golog.Logger,
+) (camera.Camera, error) {
+	
+	l := &ROSLidar{
+		Named:  conf.ResourceName().AsNamed(),
+		logger: logger,
+	}
+
+	msgs, err := loadMessages(conf.Attributes.String("bag"))
+	if err != nil {
+		return nil, err
+	}
+		
+	l.msg = &msgs[0]
 
 	return l, nil
 }
@@ -106,7 +139,6 @@ func (l *ROSLidar) Reconfigure(
 		MasterAddress: l.primaryUri,
 	})
 
-	// publisher for twist messages
 	l.subscriber, err = goroslib.NewSubscriber(goroslib.SubscriberConf{
 		Node:     l.node,
 		Topic:    l.topic,
@@ -155,8 +187,8 @@ func convertMsg(msg *sensor_msgs.LaserScan) (pointcloud.PointCloud, error) {
 		
 		p := r3.Vector{}
 		ang := msg.AngleMin + (float32(i)*msg.AngleIncrement)
-		p.X = math.Sin(float64(ang)) * float64(r)
-		p.Y = math.Cos(float64(ang)) * float64(r)
+		p.X = 1000*math.Sin(float64(ang)) * float64(r)
+		p.Y = 1000*math.Cos(float64(ang)) * float64(r)
 		
 		d := pointcloud.NewBasicData()
 		d.SetIntensity(uint16(msg.Intensities[i]))
@@ -183,4 +215,55 @@ func (l *ROSLidar) Close(_ context.Context) error {
 		l.logger.Warn("problem closing node")
 	}
 	return nil
+}
+
+func loadMessages(fn string) ([]sensor_msgs.LaserScan, error) {
+
+	bag, err := ros.ReadBag(fn)
+	if err != nil {
+		return nil, err
+	}
+	
+	err = ros.WriteTopicsJSON(bag, 0, 0, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	all, err := ros.AllMessagesForTopic(bag, "scan")
+	if err != nil {
+		return nil, err
+	}
+
+	fixed := []sensor_msgs.LaserScan{}
+	
+	for _, m := range all {
+		mm := sensor_msgs.LaserScan{}
+		// TODO(erh): there must be a better way to do this
+
+		data := m["data"].(map[string]interface{})
+
+		mm.AngleMin = float32(data["angle_min"].(float64))
+		mm.AngleMax = float32(data["angle_max"].(float64))
+		mm.AngleIncrement = float32(data["angle_increment"].(float64))
+		mm.TimeIncrement = float32(data["time_increment"].(float64))
+		mm.ScanTime = float32(data["scan_time"].(float64))
+		mm.RangeMin = float32(data["range_min"].(float64))
+		mm.RangeMax = float32(data["range_max"].(float64))
+
+		mm.Intensities = fixArray(data["intensities"])
+		mm.Ranges = fixArray(data["ranges"])
+
+		fixed = append(fixed, mm)
+	}
+
+	return fixed, nil
+}
+
+func fixArray(a interface{}) []float32 {
+	b := a.([]interface{})
+	c := []float32{}
+	for _, n := range b {
+		c = append(c, float32(n.(float64)))
+	}
+	return c
 }
