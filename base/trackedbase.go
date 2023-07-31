@@ -228,7 +228,7 @@ func (t *TrackedBase) Properties(
 	}, nil
 }
 
-func (t *TrackedBase) Geometries(_ context.Context) ([]spatialmath.Geometry, error) {
+func (t *TrackedBase) Geometries(_ context.Context, _ map[string]interface{}) ([]spatialmath.Geometry, error) {
 	t.logger.Warn("Geometries Not Implemented")
 	return nil, nil
 }

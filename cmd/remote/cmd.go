@@ -1,8 +1,5 @@
 package main
 
-/*
- * TODO: remotes implementation
- */
 import (
 	"context"
 	"os"

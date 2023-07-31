@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"math"
 	"github.com/bluenviron/goroslib/v2"
 	"github.com/bluenviron/goroslib/v2/pkg/msgs/sensor_msgs"
 	"github.com/edaniels/golog"
@@ -15,6 +14,8 @@ import (
 	"go.viam.com/rdk/resource"
 	"go.viam.com/rdk/rimage/transform"
 	"go.viam.com/rdk/ros"
+	"image"
+	"math"
 	"strings"
 	"sync"
 	"time"
@@ -156,6 +157,10 @@ func (l *ROSLidar) processMessage(msg *sensor_msgs.LaserScan) {
 
 func (l *ROSLidar) Projector(_ context.Context) (transform.Projector, error) {
 	return nil, fmt.Errorf("not implemented")
+}
+
+func (l *ROSLidar) Images(_ context.Context) ([]image.Image, time.Time, error) {
+	return nil, time.Time{}, fmt.Errorf("not implemented")
 }
 
 func (l *ROSLidar) Stream(_ context.Context, _ ...gostream.ErrorHandler) (gostream.VideoStream, error) {
