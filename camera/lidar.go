@@ -82,7 +82,7 @@ func NewROSLidarDummy(
 	conf resource.Config,
 	logger golog.Logger,
 ) (camera.Camera, error) {
-	
+
 	l := &ROSLidar{
 		Named:  conf.ResourceName().AsNamed(),
 		logger: logger,
@@ -92,7 +92,7 @@ func NewROSLidarDummy(
 	if err != nil {
 		return nil, err
 	}
-		
+
 	l.msg = &msgs[0]
 
 	return l, nil
@@ -189,15 +189,15 @@ func convertMsg(msg *sensor_msgs.LaserScan) (pointcloud.PointCloud, error) {
 			// TODO(erh): is this right? needed?
 			continue
 		}
-		
+
 		p := r3.Vector{}
-		ang := msg.AngleMin + (float32(i)*msg.AngleIncrement)
-		p.X = 1000*math.Sin(float64(ang)) * float64(r)
-		p.Y = 1000*math.Cos(float64(ang)) * float64(r)
-		
+		ang := msg.AngleMin + (float32(i) * msg.AngleIncrement)
+		p.Y = 1000 * math.Sin(float64(ang)) * float64(r)
+		p.X = 1000 * math.Cos(float64(ang)) * float64(r)
+
 		d := pointcloud.NewBasicData()
 		d.SetIntensity(uint16(msg.Intensities[i]))
-		
+
 		err := pc.Set(p, d)
 		if err != nil {
 			return nil, err
@@ -228,7 +228,7 @@ func loadMessages(fn string) ([]sensor_msgs.LaserScan, error) {
 	if err != nil {
 		return nil, err
 	}
-	
+
 	err = ros.WriteTopicsJSON(bag, 0, 0, nil)
 	if err != nil {
 		return nil, err
@@ -240,7 +240,7 @@ func loadMessages(fn string) ([]sensor_msgs.LaserScan, error) {
 	}
 
 	fixed := []sensor_msgs.LaserScan{}
-	
+
 	for _, m := range all {
 		mm := sensor_msgs.LaserScan{}
 		// TODO(erh): there must be a better way to do this
