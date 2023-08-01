@@ -192,8 +192,8 @@ func convertMsg(msg *sensor_msgs.LaserScan) (pointcloud.PointCloud, error) {
 
 		p := r3.Vector{}
 		ang := msg.AngleMin + (float32(i) * msg.AngleIncrement)
-		p.X = 1000 * math.Sin(float64(ang)) * float64(r)
-		p.Y = 1000 * math.Cos(float64(ang)) * float64(r)
+		p.Y = 1000 * math.Sin(float64(ang)) * float64(r)
+		p.X = 1000 * math.Cos(float64(ang)) * float64(r)
 
 		d := pointcloud.NewBasicData()
 		d.SetIntensity(uint16(msg.Intensities[i]))
