@@ -1,0 +1,187 @@
+{
+  "modules": [
+    {
+      "executable_path": "/home/jetson/viam-ros-module/rosmodule",
+      "name": "ros"
+    }
+  ],
+  "packages": [
+    {
+      "version": "latest",
+      "package": "e8900dfd-ec41-4353-a1b7-1605ab9fd91a/demo",
+      "name": "demo"
+    }
+  ],
+  "services": [
+    {
+      "attributes": {
+        "capture_dir": "",
+        "tags": [],
+        "capture_disabled": false,
+        "sync_disabled": false,
+        "sync_interval_mins": 0.1
+      },
+      "name": "rosdata",
+      "type": "data_manager"
+    },
+    {
+      "name": "simpleml",
+      "type": "mlmodel",
+      "model": "tflite_cpu",
+      "attributes": {
+        "label_path": "${packages.demo}/labels.txt",
+        "num_threads": 2,
+        "model_path": "${packages.demo}/demo.tflite"
+      }
+    },
+    {
+      "name": "simplemlvision",
+      "type": "vision",
+      "model": "mlmodel",
+      "attributes": {
+        "mlmodel_name": "simpleml"
+      }
+    }
+  ],
+  "network": {
+    "bind_address": ":9090"
+  },
+  "components": [
+    {
+      "type": "camera",
+      "model": "viamlabs:ros:lidar",
+      "attributes": {
+        "topic": "/scan",
+        "primary_uri": "localhost:11311"
+      },
+      "depends_on": [],
+      "name": "lidar"
+    },
+    {
+      "attributes": {
+        "topic": "/transbot/imu",
+        "primary_uri": "localhost:11311"
+      },
+      "service_configs": [
+        {
+          "attributes": {
+            "capture_methods": [
+              {
+                "method": "AngularVelocity",
+                "additional_params": {},
+                "capture_frequency_hz": 1,
+                "disabled": true
+              },
+              {
+                "additional_params": {},
+                "disabled": true,
+                "capture_frequency_hz": 1,
+                "method": "LinearVelocity"
+              },
+              {
+                "disabled": true,
+                "method": "LinearAcceleration",
+                "additional_params": {},
+                "capture_frequency_hz": 1
+              }
+            ]
+          },
+          "type": "data_manager"
+        }
+      ],
+      "depends_on": [],
+      "name": "imu",
+      "type": "movement_sensor",
+      "model": "viamlabs:ros:imu"
+    },
+    {
+      "name": "voltage",
+      "type": "sensor",
+      "model": "viamlabs:ros:yahboombattery",
+      "attributes": {
+        "topic": "/voltage",
+        "primary_uri": "localhost:11311"
+      },
+      "depends_on": [],
+      "service_configs": [
+        {
+          "type": "data_manager",
+          "attributes": {
+            "capture_methods": [
+              {
+                "method": "Readings",
+                "additional_params": {},
+                "disabled": true,
+                "capture_frequency_hz": 1
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "edition",
+      "type": "sensor",
+      "service_configs": [
+        {
+          "type": "data_manager",
+          "attributes": {
+            "capture_methods": [
+              {
+                "additional_params": {},
+                "disabled": true,
+                "capture_frequency_hz": 1,
+                "method": "Readings"
+              }
+            ]
+          }
+        }
+      ],
+      "model": "viamlabs:ros:yahboomedition",
+      "attributes": {
+        "topic": "/edition",
+        "primary_uri": "localhost:11311"
+      },
+      "depends_on": []
+    },
+    {
+      "type": "base",
+      "model": "viamlabs:ros:trackedbase",
+      "attributes": {
+        "topic": "/cmd_vel",
+        "primary_uri": "localhost:11311"
+      },
+      "depends_on": [],
+      "name": "rosbase"
+    },
+    {
+      "depends_on": [],
+      "name": "roscam",
+      "type": "camera",
+      "model": "viamlabs:ros:camera",
+      "attributes": {
+        "primary_uri": "localhost:11311",
+        "topic": "/image",
+        "node_name": "viam_roscam_node"
+      }
+    },
+    {
+      "name": "mlcamera",
+      "type": "camera",
+      "model": "transform",
+      "attributes": {
+        "pipeline": [
+          {
+            "type": "detections",
+            "attributes": {
+              "detector_name": "simplemlvision",
+              "confidence_threshold": 0.1
+            }
+          }
+        ],
+        "source": "roscam"
+      },
+      "depends_on": []
+    }
+  ]
+}
