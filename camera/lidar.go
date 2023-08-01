@@ -152,6 +152,7 @@ func (l *ROSLidar) Reconfigure(
 }
 
 func (l *ROSLidar) processMessage(msg *sensor_msgs.LaserScan) {
+	l.logger.Debug("received LaserScan message")
 	l.msg = msg
 }
 
@@ -176,7 +177,7 @@ func (l *ROSLidar) NextPointCloud(_ context.Context) (pointcloud.PointCloud, err
 	if msg == nil {
 		return nil, errors.New("lidar is not ready")
 	}
-
+	l.logger.Infof("Scan with: %d points", len(msg.Ranges))
 	return convertMsg(msg)
 }
 
