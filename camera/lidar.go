@@ -177,7 +177,7 @@ func (l *ROSLidar) NextPointCloud(_ context.Context) (pointcloud.PointCloud, err
 	if msg == nil {
 		return nil, errors.New("lidar is not ready")
 	}
-	l.logger.Infof("Scan with: %d points", len(msg.Ranges))
+	l.logger.Debugf("Scan with: %d points", len(msg.Ranges))
 	return convertMsg(msg)
 }
 
