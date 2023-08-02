@@ -125,15 +125,22 @@ func (rs *RosMediaSource) updateImageFromRosMsg(msg *sensor_msgs.Image) {
 		rs.logger.Warn("ROS image data not ready")
 		return
 	}
+	rs.mu.Lock()
+	newImage := convertImage(msg)
+	rs.mu.Unlock()
 
+	rs.img = newImage
+}
+
+func convertImage(msg *sensor_msgs.Image) image.Image {
 	ri := RosImage{height: int(msg.Height), width: int(msg.Width), step: int(msg.Step), data: msg.Data}
-	newImage := image.NewRGBA(ri.Bounds())
-	for x := 0; x<int(msg.Height); x++ {
+	rgbaImage := image.NewRGBA(ri.Bounds())
+	for x := 0; x < int(msg.Height); x++ {
 		for y := 0; y < int(msg.Width); y++ {
-			newImage.Set(x,y,ri.At(x,y))
+			rgbaImage.Set(x, y, ri.At(x, y))
 		}
 	}
-	rs.img = newImage
+	return rgbaImage
 }
 
 func init() {

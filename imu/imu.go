@@ -124,7 +124,7 @@ func (r *RosImu) Position(
 	ctx context.Context,
 	extra map[string]interface{},
 ) (*geo.Point, float64, error) {
-	// GPS - not supported
+	// TODO: Implement GPS
 	return geo.NewPoint(0, 0), 0, movementsensor.ErrMethodUnimplementedPosition
 }
 
