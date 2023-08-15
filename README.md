@@ -94,6 +94,11 @@ If you need help, you can raise issues
 2. validate reconfig logic
 3. rename ros base (trackedbase should be more generic)
 4. Understand and integrate more of the ROS robot as needed
+5. move to one viam node implementation
+
+# Topics found on Yahboom ROS Robot
+
+rostopic list -v 
 
 ## Topics Implemented
  * /edition [transbot_msgs/Edition] 1 publisher
