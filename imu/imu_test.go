@@ -1,11 +1,18 @@
 package imu
 
-import "testing"
+import (
+	"fmt"
+	"testing"
 
-/*
- * need to create a publisher on a primary ros node of sorts
- * not sure how to fake the callback yet
- */
-func TestNewRosImu(t *testing.T) {
-	t.SkipNow()
+	"go.viam.com/test"
+)
+
+func TestImuConvert(t *testing.T) {
+	msgs, err := loadMessages("data/imu_scan.bag")
+	test.That(t, err, test.ShouldBeNil)
+
+	for idx, mm := range msgs {
+		fmt.Printf("%d %v\n", idx, mm)
+	}
+
 }

@@ -2,6 +2,8 @@ package imu
 
 import (
 	"context"
+	"fmt"
+	"go.viam.com/rdk/ros"
 	"strings"
 	"sync"
 
@@ -57,6 +59,19 @@ func NewRosImu(
 		return nil, err
 	}
 
+	return r, nil
+}
+
+func NewRosImuDummy(
+	ctx context.Context,
+	deps resource.Dependencies,
+	conf resource.Config,
+	logger golog.Logger,
+) (movementsensor.MovementSensor, error) {
+	r := &RosImu{
+		Named:  conf.ResourceName().AsNamed(),
+		logger: logger,
+	}
 	return r, nil
 }
 
@@ -226,4 +241,47 @@ func (r *RosImu) Close(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func loadMessages(fn string) ([]sensor_msgs.Imu, error) {
+	bag, err := ros.ReadBag(fn)
+	if err != nil {
+		return nil, err
+	}
+
+	err = ros.WriteTopicsJSON(bag, 0, 0, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	all, err := ros.AllMessagesForTopic(bag, "/imu/data")
+	if err != nil {
+		return nil, err
+	}
+
+	//fixed := []sensor_msgs.Imu{}
+
+	for _, m := range all {
+		//mm := sensor_msgs.Imu{}
+		//data := m["data"].(map[string]interface{})
+
+		fmt.Printf("data: %v", m["data"])
+
+		/*
+			mm.AngleMin = float32(data["angle_min"].(float64))
+			mm.AngleMax = float32(data["angle_max"].(float64))
+			mm.AngleIncrement = float32(data["angle_increment"].(float64))
+			mm.TimeIncrement = float32(data["time_increment"].(float64))
+			mm.ScanTime = float32(data["scan_time"].(float64))
+			mm.RangeMin = float32(data["range_min"].(float64))
+			mm.RangeMax = float32(data["range_max"].(float64))
+
+			mm.Intensities = fixArray(data["intensities"])
+			mm.Ranges = fixArray(data["ranges"])
+
+			fixed = append(fixed, mm)
+		*/
+	}
+
+	return nil, nil
 }
