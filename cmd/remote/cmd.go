@@ -11,6 +11,7 @@ import (
 	"go.viam.com/rdk/robot/web"
 
 	_ "github.com/shawnbmccarthy/viam-ros-module/camera"
+	_ "github.com/shawnbmccarthy/viam-ros-module/imu"
 )
 
 func main() {

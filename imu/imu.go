@@ -2,7 +2,6 @@ package imu
 
 import (
 	"context"
-	"fmt"
 	"go.viam.com/rdk/ros"
 	"strings"
 	"sync"
@@ -13,6 +12,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/bluenviron/goroslib/v2"
+	"github.com/bluenviron/goroslib/v2/pkg/msgs/geometry_msgs"
 	"github.com/bluenviron/goroslib/v2/pkg/msgs/sensor_msgs"
 	"go.viam.com/rdk/components/movementsensor"
 	"go.viam.com/rdk/resource"
@@ -20,6 +20,7 @@ import (
 )
 
 var Model = resource.NewModel("viamlabs", "ros", "imu")
+var DummyImuModel = resource.NewModel("viamlabs", "ros", "imu-dummy")
 
 type RosImu struct {
 	resource.Named
@@ -40,6 +41,14 @@ func init() {
 		Model,
 		resource.Registration[movementsensor.MovementSensor, *RosImuConfig]{
 			Constructor: NewRosImu,
+		},
+	)
+
+	resource.RegisterComponent(
+		movementsensor.API,
+		DummyImuModel,
+		resource.Registration[movementsensor.MovementSensor, resource.NoNativeConfig]{
+			Constructor: NewRosImuDummy,
 		},
 	)
 }
@@ -63,8 +72,8 @@ func NewRosImu(
 }
 
 func NewRosImuDummy(
-	ctx context.Context,
-	deps resource.Dependencies,
+	_ context.Context,
+	_ resource.Dependencies,
 	conf resource.Config,
 	logger golog.Logger,
 ) (movementsensor.MovementSensor, error) {
@@ -72,6 +81,13 @@ func NewRosImuDummy(
 		Named:  conf.ResourceName().AsNamed(),
 		logger: logger,
 	}
+	msgs, err := loadMessages(conf.Attributes.String("bag"))
+	if err != nil {
+		return nil, err
+	}
+
+	r.msg = &msgs[0]
+
 	return r, nil
 }
 
@@ -99,15 +115,11 @@ func (r *RosImu) Reconfigure(
 	}
 
 	if r.subscriber != nil {
-		if r.subscriber.Close() != nil {
-			r.logger.Warn("failed to close subscriber")
-		}
+		r.subscriber.Close()
 	}
 
 	if r.node != nil {
-		if r.node.Close() != nil {
-			r.logger.Warn("failed to close node")
-		}
+		r.node.Close()
 	}
 
 	var err error
@@ -229,15 +241,12 @@ func (r *RosImu) Accuracy(
 func (r *RosImu) Close(ctx context.Context) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-
-	err := r.subscriber.Close()
-	if err != nil {
-		return err
+	if r.subscriber != nil {
+		r.subscriber.Close()
 	}
 
-	err = r.node.Close()
-	if err != nil {
-		return err
+	if r.node != nil {
+		r.node.Close()
 	}
 
 	return nil
@@ -254,34 +263,54 @@ func loadMessages(fn string) ([]sensor_msgs.Imu, error) {
 		return nil, err
 	}
 
-	all, err := ros.AllMessagesForTopic(bag, "/imu/data")
+	all, err := ros.AllMessagesForTopic(bag, "imu_data")
 	if err != nil {
 		return nil, err
 	}
 
-	//fixed := []sensor_msgs.Imu{}
+	fixed := []sensor_msgs.Imu{}
 
 	for _, m := range all {
-		//mm := sensor_msgs.Imu{}
-		//data := m["data"].(map[string]interface{})
+		mm := sensor_msgs.Imu{}
+		data := m["data"].(map[string]interface{})
 
-		fmt.Printf("data: %v", m["data"])
+		orientation := data["orientation"].(map[string]interface{})
+		orientationCovariance := data["orientation_covariance"].([]interface{})
+		angularVel := data["angular_velocity"].(map[string]interface{})
+		angularVelCovariance := data["angular_velocity_covariance"].([]interface{})
+		linearAccel := data["linear_acceleration"].(map[string]interface{})
+		linearAccelCovariance := data["linear_acceleration_covariance"].([]interface{})
+		// TODO(SM): covariance array conversions
 
-		/*
-			mm.AngleMin = float32(data["angle_min"].(float64))
-			mm.AngleMax = float32(data["angle_max"].(float64))
-			mm.AngleIncrement = float32(data["angle_increment"].(float64))
-			mm.TimeIncrement = float32(data["time_increment"].(float64))
-			mm.ScanTime = float32(data["scan_time"].(float64))
-			mm.RangeMin = float32(data["range_min"].(float64))
-			mm.RangeMax = float32(data["range_max"].(float64))
+		mm.Orientation = geometry_msgs.Quaternion{
+			X: orientation["x"].(float64),
+			Y: orientation["y"].(float64),
+			Z: orientation["z"].(float64),
+			W: orientation["w"].(float64),
+		}
+		for idx, oc := range orientationCovariance {
+			mm.OrientationCovariance[idx] = oc.(float64)
+		}
 
-			mm.Intensities = fixArray(data["intensities"])
-			mm.Ranges = fixArray(data["ranges"])
+		mm.AngularVelocity = geometry_msgs.Vector3{
+			X: angularVel["x"].(float64),
+			Y: angularVel["y"].(float64),
+			Z: angularVel["z"].(float64),
+		}
+		for idx, avc := range angularVelCovariance {
+			mm.AngularVelocityCovariance[idx] = avc.(float64)
+		}
 
-			fixed = append(fixed, mm)
-		*/
+		mm.LinearAcceleration = geometry_msgs.Vector3{
+			X: linearAccel["x"].(float64),
+			Y: linearAccel["y"].(float64),
+			Z: linearAccel["z"].(float64),
+		}
+		for idx, lac := range linearAccelCovariance {
+			mm.LinearAccelerationCovariance[idx] = lac.(float64)
+		}
+
+		fixed = append(fixed, mm)
 	}
-
-	return nil, nil
+	return fixed, nil
 }

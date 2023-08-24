@@ -14,7 +14,6 @@ import (
 	"go.viam.com/rdk/resource"
 	"go.viam.com/rdk/rimage/transform"
 	"go.viam.com/rdk/ros"
-	"image"
 	"math"
 	"strings"
 	"sync"
@@ -124,15 +123,11 @@ func (l *ROSLidar) Reconfigure(
 	}
 
 	if l.subscriber != nil {
-		if l.subscriber.Close() != nil {
-			l.logger.Warn("failed to close subscriber")
-		}
+		l.subscriber.Close()
 	}
 
 	if l.node != nil {
-		if l.node.Close() != nil {
-			l.logger.Warn("failed to close node")
-		}
+		l.node.Close()
 	}
 
 	l.node, err = goroslib.NewNode(goroslib.NodeConf{
@@ -160,8 +155,8 @@ func (l *ROSLidar) Projector(_ context.Context) (transform.Projector, error) {
 	return nil, fmt.Errorf("not implemented")
 }
 
-func (l *ROSLidar) Images(_ context.Context) ([]image.Image, time.Time, error) {
-	return nil, time.Time{}, fmt.Errorf("not implemented")
+func (l *ROSLidar) Images(_ context.Context) ([]camera.NamedImage, resource.ResponseMetadata, error) {
+	return nil, resource.ResponseMetadata{}, fmt.Errorf("not implemented")
 }
 
 func (l *ROSLidar) Stream(_ context.Context, _ ...gostream.ErrorHandler) (gostream.VideoStream, error) {
@@ -213,12 +208,12 @@ func (l *ROSLidar) Properties(_ context.Context) (camera.Properties, error) {
 }
 
 func (l *ROSLidar) Close(_ context.Context) error {
-	if l.subscriber.Close() != nil {
-		l.logger.Warn("problem closing subscriber")
+	if l.subscriber != nil {
+		l.subscriber.Close()
 	}
 
-	if l.node.Close() != nil {
-		l.logger.Warn("problem closing node")
+	if l.node != nil {
+		l.node.Close()
 	}
 	return nil
 }

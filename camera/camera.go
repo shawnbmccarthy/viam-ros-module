@@ -74,15 +74,11 @@ func (rs *RosMediaSource) Reconfigure(
 	}
 
 	if rs.subscriber != nil {
-		if rs.subscriber.Close() != nil {
-			rs.logger.Warn("failed to close subscriber")
-		}
+		rs.subscriber.Close()
 	}
 
 	if rs.node != nil {
-		if rs.node.Close() != nil {
-			rs.logger.Warn("failed to close node")
-		}
+		rs.node.Close()
 	}
 
 	rs.node, err = goroslib.NewNode(goroslib.NodeConf{
