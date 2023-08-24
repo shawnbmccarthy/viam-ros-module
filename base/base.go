@@ -39,7 +39,7 @@ func init() {
 	resource.RegisterComponent(
 		viambase.API,
 		RosBaseModel,
-		resource.Registration[viambase.Base, *TrackedBaseConfig]{
+		resource.Registration[viambase.Base, *RosBaseConfig]{
 			Constructor: NewTrackedBase,
 		},
 	)
