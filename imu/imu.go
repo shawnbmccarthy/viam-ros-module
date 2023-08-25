@@ -240,53 +240,7 @@ func (r *RosImu) Readings(
 	ctx context.Context,
 	extra map[string]interface{},
 ) (map[string]interface{}, error) {
-	props, err := r.Properties(ctx, extra)
-	if err != nil {
-		return nil, err
-	}
-
-	var readingsError error
-	readings := map[string]interface{}{}
-
-	if props.AngularVelocitySupported {
-		var av spatialmath.AngularVelocity
-		av, readingsError = r.AngularVelocity(ctx, extra)
-		readings["angular_velocity"] = av
-	}
-
-	if props.PositionSupported {
-		var pos *geo.Point
-		var alt float64
-		pos, alt, readingsError = r.Position(ctx, extra)
-		readings["position"] = pos
-		readings["altitude"] = alt
-	}
-
-	if props.CompassHeadingSupported {
-		var compass float64
-		compass, readingsError = r.CompassHeading(ctx, extra)
-		readings["compass"] = compass
-	}
-
-	if props.OrientationSupported {
-		var o spatialmath.Orientation
-		o, readingsError = r.Orientation(ctx, extra)
-		readings["orientation"] = o
-	}
-
-	if props.LinearVelocitySupported {
-		var lv r3.Vector
-		lv, readingsError = r.LinearVelocity(ctx, extra)
-		readings["linear_velocity"] = lv
-	}
-
-	if props.LinearAccelerationSupported {
-		var la r3.Vector
-		la, readingsError = r.LinearAcceleration(ctx, extra)
-		readings["linear_acceleration"] = la
-	}
-
-	return readings, readingsError
+	return movementsensor.Readings(ctx, r, extra)
 }
 
 func (r *RosImu) Accuracy(
