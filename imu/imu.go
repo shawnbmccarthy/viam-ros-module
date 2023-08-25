@@ -156,6 +156,7 @@ func (r *RosImu) Reconfigure(
 }
 
 func (r *RosImu) processMessage(msg *sensor_msgs.Imu) {
+	r.logger.Infof("MSG: %+v", r.msg)
 	r.msg = msg
 }
 
