@@ -6,6 +6,7 @@ import (
 	"github.com/bluenviron/goroslib/v2"
 	"github.com/edaniels/golog"
 	"github.com/shawnbmccarthy/viam-ros-module/pkg/msgs/transbot_msgs"
+	"github.com/shawnbmccarthy/viam-ros-module/viamrosnode"
 	"go.viam.com/rdk/components/sensor"
 	"go.viam.com/rdk/resource"
 	"strings"
@@ -18,7 +19,6 @@ type EditionSensor struct {
 	resource.Named
 
 	mu         sync.Mutex
-	nodeName   string
 	primaryUri string
 	topic      string
 	node       *goroslib.Node
@@ -62,7 +62,6 @@ func (e *EditionSensor) Reconfigure(
 ) error {
 	e.mu.Lock()
 	defer e.mu.Unlock()
-	e.nodeName = conf.Attributes.String("node_name")
 	e.primaryUri = conf.Attributes.String("primary_uri")
 	e.topic = conf.Attributes.String("topic")
 
@@ -74,24 +73,12 @@ func (e *EditionSensor) Reconfigure(
 		return errors.New("ROS topic must be set to valid sensor topic")
 	}
 
-	if len(strings.TrimSpace(e.nodeName)) == 0 {
-		e.nodeName = "viam_batterysensor_node"
-	}
-
 	if e.subscriber != nil {
 		e.subscriber.Close()
 	}
 
-	if e.node != nil {
-		e.node.Close()
-	}
-
 	var err error
-	e.node, err = goroslib.NewNode(goroslib.NodeConf{
-		Name:          e.nodeName,
-		MasterAddress: e.primaryUri,
-	})
-
+	e.node, err = viamrosnode.GetInstance(e.primaryUri)
 	if err != nil {
 		return err
 	}
@@ -101,7 +88,6 @@ func (e *EditionSensor) Reconfigure(
 		Topic:    e.topic,
 		Callback: e.processMessage,
 	})
-
 	if err != nil {
 		return err
 	}
@@ -126,10 +112,6 @@ func (e *EditionSensor) Readings(
 func (e *EditionSensor) Close(_ context.Context) error {
 	if e.subscriber != nil {
 		e.subscriber.Close()
-	}
-
-	if e.node != nil {
-		e.node.Close()
 	}
 	return nil
 }

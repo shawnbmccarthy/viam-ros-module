@@ -8,6 +8,7 @@ import (
 	"github.com/bluenviron/goroslib/v2/pkg/msgs/sensor_msgs"
 	"github.com/edaniels/golog"
 	"github.com/golang/geo/r3"
+	"github.com/shawnbmccarthy/viam-ros-module/viamrosnode"
 	"github.com/viamrobotics/gostream"
 	"go.viam.com/rdk/components/camera"
 	"go.viam.com/rdk/pointcloud"
@@ -27,7 +28,6 @@ type ROSLidar struct {
 	resource.Named
 
 	mu         sync.Mutex
-	nodeName   string
 	primaryUri string
 	topic      string
 	timeRate   time.Duration // ms to publish
@@ -106,7 +106,6 @@ func (l *ROSLidar) Reconfigure(
 	var err error
 	l.mu.Lock()
 	defer l.mu.Unlock()
-	l.nodeName = conf.Attributes.String("node_name")
 	l.primaryUri = conf.Attributes.String("primary_uri")
 	l.topic = conf.Attributes.String("topic")
 
@@ -118,22 +117,14 @@ func (l *ROSLidar) Reconfigure(
 		return errors.New("ROS topic must be set to valid imu topic")
 	}
 
-	if len(strings.TrimSpace(l.nodeName)) == 0 {
-		l.nodeName = "viam_lidar_node"
-	}
-
 	if l.subscriber != nil {
 		l.subscriber.Close()
 	}
 
-	if l.node != nil {
-		l.node.Close()
+	l.node, err = viamrosnode.GetInstance(l.primaryUri)
+	if err != nil {
+		return err
 	}
-
-	l.node, err = goroslib.NewNode(goroslib.NodeConf{
-		Name:          l.nodeName,
-		MasterAddress: l.primaryUri,
-	})
 
 	l.subscriber, err = goroslib.NewSubscriber(goroslib.SubscriberConf{
 		Node:     l.node,

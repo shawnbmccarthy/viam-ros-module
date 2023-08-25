@@ -7,6 +7,7 @@ import (
 	"github.com/bluenviron/goroslib/v2/pkg/msgs/geometry_msgs"
 	"github.com/edaniels/golog"
 	"github.com/golang/geo/r3"
+	"github.com/shawnbmccarthy/viam-ros-module/viamrosnode"
 	viambase "go.viam.com/rdk/components/base"
 	"go.viam.com/rdk/resource"
 	"go.viam.com/rdk/spatialmath"
@@ -60,7 +61,7 @@ func NewTrackedBase(
 		return nil, err
 	}
 
-	// set twist message thread
+	// set twist message thread - need to stop sending after stop
 	go func() {
 		for atomic.LoadInt32(&t.closed) == 0 {
 			select {
@@ -104,22 +105,14 @@ func (t *RosBase) Reconfigure(
 		return errors.New("ROS topic must be set to valid imu topic")
 	}
 
-	if len(strings.TrimSpace(t.nodeName)) == 0 {
-		t.nodeName = "viam_trackedbase_node"
-	}
-
 	if t.publisher != nil {
 		t.publisher.Close()
 	}
 
-	if t.node != nil {
-		t.node.Close()
+	t.node, err = viamrosnode.GetInstance(t.primaryUri)
+	if err != nil {
+		return err
 	}
-
-	t.node, err = goroslib.NewNode(goroslib.NodeConf{
-		Name:          t.nodeName,
-		MasterAddress: t.primaryUri,
-	})
 
 	t.msgRate = t.node.TimeRate(t.timeRate)
 	if err != nil {
@@ -209,7 +202,6 @@ func (t *RosBase) IsMoving(_ context.Context) (bool, error) {
 func (t *RosBase) Close(_ context.Context) error {
 	atomic.StoreInt32(&t.closed, 1)
 	t.publisher.Close()
-	t.node.Close()
 	return nil
 }
 

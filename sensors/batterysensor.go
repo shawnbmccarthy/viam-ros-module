@@ -6,6 +6,7 @@ import (
 	"github.com/bluenviron/goroslib/v2"
 	"github.com/edaniels/golog"
 	"github.com/shawnbmccarthy/viam-ros-module/pkg/msgs/transbot_msgs"
+	"github.com/shawnbmccarthy/viam-ros-module/viamrosnode"
 	"go.viam.com/rdk/components/sensor"
 	"go.viam.com/rdk/resource"
 	"strings"
@@ -18,7 +19,6 @@ type BatterySensor struct {
 	resource.Named
 
 	mu         sync.Mutex
-	nodeName   string
 	primaryUri string
 	topic      string
 	node       *goroslib.Node
@@ -62,7 +62,6 @@ func (b *BatterySensor) Reconfigure(
 ) error {
 	b.mu.Lock()
 	defer b.mu.Unlock()
-	b.nodeName = conf.Attributes.String("node_name")
 	b.primaryUri = conf.Attributes.String("primary_uri")
 	b.topic = conf.Attributes.String("topic")
 
@@ -74,24 +73,12 @@ func (b *BatterySensor) Reconfigure(
 		return errors.New("ROS topic must be set to valid sensor topic")
 	}
 
-	if len(strings.TrimSpace(b.nodeName)) == 0 {
-		b.nodeName = "viam_batterysensor_node"
-	}
-
 	if b.subscriber != nil {
 		b.subscriber.Close()
 	}
 
-	if b.node != nil {
-		b.node.Close()
-	}
-
 	var err error
-	b.node, err = goroslib.NewNode(goroslib.NodeConf{
-		Name:          b.nodeName,
-		MasterAddress: b.primaryUri,
-	})
-
+	b.node, err = viamrosnode.GetInstance(b.primaryUri)
 	if err != nil {
 		return err
 	}
@@ -126,10 +113,6 @@ func (b *BatterySensor) Readings(
 func (b *BatterySensor) Close(_ context.Context) error {
 	if b.subscriber != nil {
 		b.subscriber.Close()
-	}
-
-	if b.node != nil {
-		b.node.Close()
 	}
 	return nil
 }

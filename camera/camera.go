@@ -7,6 +7,7 @@ import (
 	"github.com/bluenviron/goroslib/v2"
 	"github.com/bluenviron/goroslib/v2/pkg/msgs/sensor_msgs"
 	"github.com/edaniels/golog"
+	"github.com/shawnbmccarthy/viam-ros-module/viamrosnode"
 	viamcamera "go.viam.com/rdk/components/camera"
 	"go.viam.com/rdk/resource"
 	"image"
@@ -42,7 +43,6 @@ type RosMediaSource struct {
 	logger     golog.Logger
 	mu         sync.Mutex
 	img        image.Image
-	nodeName   string
 	primaryUri string
 	topic      string
 	node       *goroslib.Node
@@ -57,7 +57,6 @@ func (rs *RosMediaSource) Reconfigure(
 	var err error
 	rs.mu.Lock()
 	defer rs.mu.Unlock()
-	rs.nodeName = conf.Attributes.String("node_name")
 	rs.primaryUri = conf.Attributes.String("primary_uri")
 	rs.topic = conf.Attributes.String("topic")
 
@@ -69,24 +68,12 @@ func (rs *RosMediaSource) Reconfigure(
 		return errors.New("ROS topic must be set to valid camera topic")
 	}
 
-	if len(strings.TrimSpace(rs.nodeName)) == 0 {
-		return errors.New("ROS node name must be set for camera node")
-	}
-
 	if rs.subscriber != nil {
 		rs.subscriber.Close()
 	}
 
-	if rs.node != nil {
-		rs.node.Close()
-	}
-
-	rs.node, err = goroslib.NewNode(goroslib.NodeConf{
-		Name:          rs.nodeName,
-		MasterAddress: rs.primaryUri,
-	})
+	rs.node, err = viamrosnode.GetInstance(rs.primaryUri)
 	if err != nil {
-		rs.logger.Errorf("problem creating node: %v", err)
 		return err
 	}
 
@@ -96,7 +83,6 @@ func (rs *RosMediaSource) Reconfigure(
 		Callback: rs.updateImageFromRosMsg,
 	})
 	if err != nil {
-		rs.logger.Errorf("problem creating subscriber: %v", err)
 		return err
 	}
 
@@ -112,6 +98,7 @@ func (rs *RosMediaSource) Read(_ context.Context) (image.Image, func(), error) {
 }
 
 func (rs *RosMediaSource) Close(_ context.Context) error {
+	rs.subscriber.Close()
 	return nil
 }
 

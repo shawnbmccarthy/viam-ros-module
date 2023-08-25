@@ -39,7 +39,6 @@ type RosImu struct {
 	resource.Named
 
 	mu         sync.Mutex
-	nodeName   string
 	primaryUri string
 	topic      string
 	node       *goroslib.Node

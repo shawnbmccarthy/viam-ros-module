@@ -1,6 +1,7 @@
 package viamrosnode
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 	"sync"
@@ -26,7 +27,7 @@ func GetInstance(primary string) (*goroslib.Node, error) {
 		return node, nil
 	} else {
 		node, err := goroslib.NewNode(goroslib.NodeConf{
-			Name:          strings.Join([]string{primary, strconv.Itoa(i)}, ""),
+			Name:          strings.Join([]string{"viamrosnode_", primary, strconv.Itoa(i)}, ""),
 			MasterAddress: primary,
 		})
 		if err != nil {
@@ -42,7 +43,8 @@ func GetInstance(primary string) (*goroslib.Node, error) {
 func ShutdownNodes() {
 	lock.Lock()
 	defer lock.Unlock()
-	for _, node := range nodes {
+	for primary, node := range nodes {
+		fmt.Printf("Closing %s", primary)
 		node.Close()
 	}
 }
