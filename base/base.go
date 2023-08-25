@@ -16,9 +16,9 @@ import (
 	"time"
 )
 
-var TrackedBaseModel = resource.NewModel("viamlabs", "ros", "trackedbase")
+var RosBaseModel = resource.NewModel("viamlabs", "ros", "base")
 
-type TrackedBase struct {
+type RosBase struct {
 	resource.Named
 
 	mu         sync.Mutex
@@ -38,8 +38,8 @@ type TrackedBase struct {
 func init() {
 	resource.RegisterComponent(
 		viambase.API,
-		TrackedBaseModel,
-		resource.Registration[viambase.Base, *TrackedBaseConfig]{
+		RosBaseModel,
+		resource.Registration[viambase.Base, *RosBaseConfig]{
 			Constructor: NewTrackedBase,
 		},
 	)
@@ -51,7 +51,7 @@ func NewTrackedBase(
 	conf resource.Config,
 	logger golog.Logger,
 ) (viambase.Base, error) {
-	t := &TrackedBase{
+	t := &RosBase{
 		Named:  conf.ResourceName().AsNamed(),
 		logger: logger,
 	}
@@ -76,7 +76,7 @@ func NewTrackedBase(
 }
 
 // Reconfigure clean this up
-func (t *TrackedBase) Reconfigure(
+func (t *RosBase) Reconfigure(
 	_ context.Context,
 	_ resource.Dependencies,
 	conf resource.Config,
@@ -109,15 +109,11 @@ func (t *TrackedBase) Reconfigure(
 	}
 
 	if t.publisher != nil {
-		if t.publisher.Close() != nil {
-			t.logger.Warn("failed to close publisher")
-		}
+		t.publisher.Close()
 	}
 
 	if t.node != nil {
-		if t.node.Close() != nil {
-			t.logger.Warn("failed to close node")
-		}
+		t.node.Close()
 	}
 
 	t.node, err = goroslib.NewNode(goroslib.NodeConf{
@@ -143,7 +139,7 @@ func (t *TrackedBase) Reconfigure(
 	return nil
 }
 
-func (t *TrackedBase) MoveStraight(
+func (t *RosBase) MoveStraight(
 	ctx context.Context,
 	distanceMm int,
 	mmPerSec float64,
@@ -153,7 +149,7 @@ func (t *TrackedBase) MoveStraight(
 	return nil
 }
 
-func (t *TrackedBase) Spin(
+func (t *RosBase) Spin(
 	ctx context.Context,
 	angleDeg,
 	degsPerSec float64,
@@ -163,7 +159,7 @@ func (t *TrackedBase) Spin(
 	return nil
 }
 
-func (t *TrackedBase) SetPower(
+func (t *RosBase) SetPower(
 	_ context.Context,
 	linear r3.Vector,
 	angular r3.Vector,
@@ -179,7 +175,7 @@ func (t *TrackedBase) SetPower(
 	return nil
 }
 
-func (t *TrackedBase) SetVelocity(
+func (t *RosBase) SetVelocity(
 	_ context.Context,
 	linear r3.Vector,
 	angular r3.Vector,
@@ -195,7 +191,7 @@ func (t *TrackedBase) SetVelocity(
 	return nil
 }
 
-func (t *TrackedBase) Stop(_ context.Context, _ map[string]interface{}) error {
+func (t *RosBase) Stop(_ context.Context, _ map[string]interface{}) error {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	t.twistMsg = &geometry_msgs.Twist{
@@ -206,19 +202,18 @@ func (t *TrackedBase) Stop(_ context.Context, _ map[string]interface{}) error {
 	return nil
 }
 
-func (t *TrackedBase) IsMoving(_ context.Context) (bool, error) {
+func (t *RosBase) IsMoving(_ context.Context) (bool, error) {
 	return t.moving, nil
 }
 
-func (t *TrackedBase) Close(_ context.Context) error {
+func (t *RosBase) Close(_ context.Context) error {
 	atomic.StoreInt32(&t.closed, 1)
-	err := t.publisher.Close()
-	err = t.node.Close()
-
-	return err
+	t.publisher.Close()
+	t.node.Close()
+	return nil
 }
 
-func (t *TrackedBase) Properties(
+func (t *RosBase) Properties(
 	_ context.Context,
 	_ map[string]interface{},
 ) (viambase.Properties, error) {
@@ -228,7 +223,7 @@ func (t *TrackedBase) Properties(
 	}, nil
 }
 
-func (t *TrackedBase) Geometries(_ context.Context, _ map[string]interface{}) ([]spatialmath.Geometry, error) {
+func (t *RosBase) Geometries(_ context.Context, _ map[string]interface{}) ([]spatialmath.Geometry, error) {
 	t.logger.Warn("Geometries Not Implemented")
 	return nil, nil
 }

@@ -3,11 +3,18 @@
         {
             "type" : "camera",
             "model" : "viamlabs:ros:lidar-dummy",
-            "name" : "foo",
+            "name" : "lidar-test",
             "attributes" : {
                 "bag" : "camera/data/lidar_laser_scan.bag"
+            }
+        },
+        {
+            "type": "movement_sensor",
+            "model": "viamlabs:ros:imu-dummy",
+            "name": "imu-test",
+            "attributes": {
+                "bag": "imu/data/imu.bag"
             }
         }
     ]
 }
-            

@@ -1,7 +1,20 @@
 package imu
 
+/*
+ * RosImu
+ * The mapping from the ROS IMU message only supports:
+ * Orientation
+ * Angular Velocity
+ * Linear Velocity
+ *
+ * If we have other topics in ROS to produce
+ * GPS, Compass Headings, etc:
+ * we will need to add more subscribers and more
+ * message type support
+ */
 import (
 	"context"
+	"go.viam.com/rdk/ros"
 	"strings"
 	"sync"
 
@@ -11,6 +24,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/bluenviron/goroslib/v2"
+	"github.com/bluenviron/goroslib/v2/pkg/msgs/geometry_msgs"
 	"github.com/bluenviron/goroslib/v2/pkg/msgs/sensor_msgs"
 	"go.viam.com/rdk/components/movementsensor"
 	"go.viam.com/rdk/resource"
@@ -18,6 +32,7 @@ import (
 )
 
 var Model = resource.NewModel("viamlabs", "ros", "imu")
+var DummyImuModel = resource.NewModel("viamlabs", "ros", "imu-dummy")
 
 type RosImu struct {
 	resource.Named
@@ -40,6 +55,14 @@ func init() {
 			Constructor: NewRosImu,
 		},
 	)
+
+	resource.RegisterComponent(
+		movementsensor.API,
+		DummyImuModel,
+		resource.Registration[movementsensor.MovementSensor, resource.NoNativeConfig]{
+			Constructor: NewRosImuDummy,
+		},
+	)
 }
 
 func NewRosImu(
@@ -56,6 +79,26 @@ func NewRosImu(
 	if err := r.Reconfigure(ctx, deps, conf); err != nil {
 		return nil, err
 	}
+
+	return r, nil
+}
+
+func NewRosImuDummy(
+	_ context.Context,
+	_ resource.Dependencies,
+	conf resource.Config,
+	logger golog.Logger,
+) (movementsensor.MovementSensor, error) {
+	r := &RosImu{
+		Named:  conf.ResourceName().AsNamed(),
+		logger: logger,
+	}
+	msgs, err := loadMessages(conf.Attributes.String("bag"))
+	if err != nil {
+		return nil, err
+	}
+
+	r.msg = &msgs[0]
 
 	return r, nil
 }
@@ -84,15 +127,11 @@ func (r *RosImu) Reconfigure(
 	}
 
 	if r.subscriber != nil {
-		if r.subscriber.Close() != nil {
-			r.logger.Warn("failed to close subscriber")
-		}
+		r.subscriber.Close()
 	}
 
 	if r.node != nil {
-		if r.node.Close() != nil {
-			r.logger.Warn("failed to close node")
-		}
+		r.node.Close()
 	}
 
 	var err error
@@ -121,24 +160,23 @@ func (r *RosImu) processMessage(msg *sensor_msgs.Imu) {
 }
 
 func (r *RosImu) Position(
-	ctx context.Context,
-	extra map[string]interface{},
+	_ context.Context,
+	_ map[string]interface{},
 ) (*geo.Point, float64, error) {
 	// TODO: Implement GPS
 	return geo.NewPoint(0, 0), 0, movementsensor.ErrMethodUnimplementedPosition
 }
 
 func (r *RosImu) LinearVelocity(
-	ctx context.Context,
-	extra map[string]interface{},
+	_ context.Context,
+	_ map[string]interface{},
 ) (r3.Vector, error) {
-	// GPS - not supported
 	return r3.Vector{}, movementsensor.ErrMethodUnimplementedLinearVelocity
 }
 
 func (r *RosImu) AngularVelocity(
-	ctx context.Context,
-	extra map[string]interface{},
+	_ context.Context,
+	_ map[string]interface{},
 ) (spatialmath.AngularVelocity, error) {
 	// IMU
 	if r.msg == nil {
@@ -153,8 +191,8 @@ func (r *RosImu) AngularVelocity(
 }
 
 func (r *RosImu) LinearAcceleration(
-	ctx context.Context,
-	extra map[string]interface{},
+	_ context.Context,
+	_ map[string]interface{},
 ) (r3.Vector, error) {
 	// IMU
 	if r.msg == nil {
@@ -169,25 +207,31 @@ func (r *RosImu) LinearAcceleration(
 }
 
 func (r *RosImu) CompassHeading(
-	ctx context.Context,
-	extra map[string]interface{},
+	_ context.Context,
+	_ map[string]interface{},
 ) (float64, error) {
 	return 0, movementsensor.ErrMethodUnimplementedCompassHeading
 }
 
 func (r *RosImu) Orientation(
-	ctx context.Context,
-	extra map[string]interface{},
+	_ context.Context,
+	_ map[string]interface{},
 ) (spatialmath.Orientation, error) {
 	// IMU
-	return nil, errors.New("conversion not supported at this time")
+	q := r.msg.Orientation
+	return &spatialmath.Quaternion{Real: q.W, Imag: q.X, Jmag: q.Y, Kmag: q.Z}, nil
 }
 
 func (r *RosImu) Properties(
-	ctx context.Context,
-	extra map[string]interface{},
+	_ context.Context,
+	_ map[string]interface{},
 ) (*movementsensor.Properties, error) {
 	return &movementsensor.Properties{
+		PositionSupported:           false,
+		AngularVelocitySupported:    true,
+		CompassHeadingSupported:     false,
+		OrientationSupported:        true,
+		LinearVelocitySupported:     false,
 		LinearAccelerationSupported: true,
 	}, nil
 }
@@ -196,34 +240,138 @@ func (r *RosImu) Readings(
 	ctx context.Context,
 	extra map[string]interface{},
 ) (map[string]interface{}, error) {
-	readings, err := movementsensor.Readings(ctx, r, extra)
+	props, err := r.Properties(ctx, extra)
 	if err != nil {
 		return nil, err
 	}
-	return readings, nil
+
+	var readingsError error
+	readings := map[string]interface{}{}
+
+	if props.AngularVelocitySupported {
+		var av spatialmath.AngularVelocity
+		av, readingsError = r.AngularVelocity(ctx, extra)
+		readings["angular_velocity"] = av
+	}
+
+	if props.PositionSupported {
+		var pos *geo.Point
+		var alt float64
+		pos, alt, readingsError = r.Position(ctx, extra)
+		readings["position"] = pos
+		readings["altitude"] = alt
+	}
+
+	if props.CompassHeadingSupported {
+		var compass float64
+		compass, readingsError = r.CompassHeading(ctx, extra)
+		readings["compass"] = compass
+	}
+
+	if props.OrientationSupported {
+		var o spatialmath.Orientation
+		o, readingsError = r.Orientation(ctx, extra)
+		readings["orientation"] = o
+	}
+
+	if props.LinearVelocitySupported {
+		var lv r3.Vector
+		lv, readingsError = r.LinearVelocity(ctx, extra)
+		readings["linear_velocity"] = lv
+	}
+
+	if props.LinearAccelerationSupported {
+		var la r3.Vector
+		la, readingsError = r.LinearAcceleration(ctx, extra)
+		readings["linear_acceleration"] = la
+	}
+
+	return readings, readingsError
 }
 
 func (r *RosImu) Accuracy(
-	ctx context.Context,
-	extra map[string]interface{},
+	_ context.Context,
+	_ map[string]interface{},
 ) (map[string]float32, error) {
-	// GPS - not supported
 	return map[string]float32{}, movementsensor.ErrMethodUnimplementedAccuracy
 }
 
-func (r *RosImu) Close(ctx context.Context) error {
+func (r *RosImu) Close(_ context.Context) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-
-	err := r.subscriber.Close()
-	if err != nil {
-		return err
+	if r.subscriber != nil {
+		r.subscriber.Close()
 	}
 
-	err = r.node.Close()
-	if err != nil {
-		return err
+	if r.node != nil {
+		r.node.Close()
 	}
 
 	return nil
+}
+
+/*
+ * used for basic testing
+ */
+func loadMessages(fn string) ([]sensor_msgs.Imu, error) {
+	bag, err := ros.ReadBag(fn)
+	if err != nil {
+		return nil, err
+	}
+
+	err = ros.WriteTopicsJSON(bag, 0, 0, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	all, err := ros.AllMessagesForTopic(bag, "imu_data")
+	if err != nil {
+		return nil, err
+	}
+
+	fixed := []sensor_msgs.Imu{}
+
+	for _, m := range all {
+		mm := sensor_msgs.Imu{}
+		data := m["data"].(map[string]interface{})
+
+		orientation := data["orientation"].(map[string]interface{})
+		orientationCovariance := data["orientation_covariance"].([]interface{})
+		angularVel := data["angular_velocity"].(map[string]interface{})
+		angularVelCovariance := data["angular_velocity_covariance"].([]interface{})
+		linearAccel := data["linear_acceleration"].(map[string]interface{})
+		linearAccelCovariance := data["linear_acceleration_covariance"].([]interface{})
+		// TODO(SM): covariance array conversions
+
+		mm.Orientation = geometry_msgs.Quaternion{
+			X: orientation["x"].(float64),
+			Y: orientation["y"].(float64),
+			Z: orientation["z"].(float64),
+			W: orientation["w"].(float64),
+		}
+		for idx, oc := range orientationCovariance {
+			mm.OrientationCovariance[idx] = oc.(float64)
+		}
+
+		mm.AngularVelocity = geometry_msgs.Vector3{
+			X: angularVel["x"].(float64),
+			Y: angularVel["y"].(float64),
+			Z: angularVel["z"].(float64),
+		}
+		for idx, avc := range angularVelCovariance {
+			mm.AngularVelocityCovariance[idx] = avc.(float64)
+		}
+
+		mm.LinearAcceleration = geometry_msgs.Vector3{
+			X: linearAccel["x"].(float64),
+			Y: linearAccel["y"].(float64),
+			Z: linearAccel["z"].(float64),
+		}
+		for idx, lac := range linearAccelCovariance {
+			mm.LinearAccelerationCovariance[idx] = lac.(float64)
+		}
+
+		fixed = append(fixed, mm)
+	}
+	return fixed, nil
 }
