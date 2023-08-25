@@ -79,15 +79,11 @@ func (b *BatterySensor) Reconfigure(
 	}
 
 	if b.subscriber != nil {
-		if b.subscriber.Close() != nil {
-			b.logger.Warn("failed to close subscriber")
-		}
+		b.subscriber.Close()
 	}
 
 	if b.node != nil {
-		if b.node.Close() != nil {
-			b.logger.Warn("failed to close node")
-		}
+		b.node.Close()
 	}
 
 	var err error
@@ -128,7 +124,12 @@ func (b *BatterySensor) Readings(
 }
 
 func (b *BatterySensor) Close(_ context.Context) error {
-	err := b.subscriber.Close()
-	err = b.node.Close()
-	return err
+	if b.subscriber != nil {
+		b.subscriber.Close()
+	}
+
+	if b.node != nil {
+		b.node.Close()
+	}
+	return nil
 }

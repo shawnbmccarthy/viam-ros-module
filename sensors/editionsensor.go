@@ -79,15 +79,11 @@ func (e *EditionSensor) Reconfigure(
 	}
 
 	if e.subscriber != nil {
-		if e.subscriber.Close() != nil {
-			e.logger.Warn("failed to close subscriber")
-		}
+		e.subscriber.Close()
 	}
 
 	if e.node != nil {
-		if e.node.Close() != nil {
-			e.logger.Warn("failed to close node")
-		}
+		e.node.Close()
 	}
 
 	var err error
@@ -128,7 +124,12 @@ func (e *EditionSensor) Readings(
 }
 
 func (e *EditionSensor) Close(_ context.Context) error {
-	err := e.subscriber.Close()
-	err = e.node.Close()
-	return err
+	if e.subscriber != nil {
+		e.subscriber.Close()
+	}
+
+	if e.node != nil {
+		e.node.Close()
+	}
+	return nil
 }
