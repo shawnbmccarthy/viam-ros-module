@@ -5,6 +5,8 @@ import (
 	"github.com/shawnbmccarthy/viam-ros-module/base"
 	"github.com/shawnbmccarthy/viam-ros-module/camera"
 	"github.com/shawnbmccarthy/viam-ros-module/sensors"
+	"github.com/shawnbmccarthy/viam-ros-module/viamrosnode"
+
 	viambase "go.viam.com/rdk/components/base"
 	viamcamera "go.viam.com/rdk/components/camera"
 	viamsensor "go.viam.com/rdk/components/sensor"
@@ -40,6 +42,8 @@ func realMain() error {
 
 	err = myMod.Start(ctx)
 	defer myMod.Close(ctx)
+	defer viamrosnode.ShutdownNodes()
+
 	if err != nil {
 		return err
 	}

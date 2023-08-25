@@ -26,6 +26,7 @@ import (
 	"github.com/bluenviron/goroslib/v2"
 	"github.com/bluenviron/goroslib/v2/pkg/msgs/geometry_msgs"
 	"github.com/bluenviron/goroslib/v2/pkg/msgs/sensor_msgs"
+	"github.com/shawnbmccarthy/viam-ros-module/viamrosnode"
 	"go.viam.com/rdk/components/movementsensor"
 	"go.viam.com/rdk/resource"
 	"go.viam.com/rdk/spatialmath"
@@ -110,7 +111,6 @@ func (r *RosImu) Reconfigure(
 ) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	r.nodeName = conf.Attributes.String("node_name")
 	r.primaryUri = conf.Attributes.String("primary_uri")
 	r.topic = conf.Attributes.String("topic")
 
@@ -122,23 +122,12 @@ func (r *RosImu) Reconfigure(
 		return errors.New("ROS topic must be set to valid imu topic")
 	}
 
-	if len(strings.TrimSpace(r.nodeName)) == 0 {
-		r.nodeName = "viam_imu_node"
-	}
-
 	if r.subscriber != nil {
 		r.subscriber.Close()
 	}
 
-	if r.node != nil {
-		r.node.Close()
-	}
-
 	var err error
-	r.node, err = goroslib.NewNode(goroslib.NodeConf{
-		Name:          r.nodeName,
-		MasterAddress: r.primaryUri,
-	})
+	r.node, err = viamrosnode.GetInstance(r.primaryUri)
 	if err != nil {
 		return err
 	}
@@ -156,7 +145,8 @@ func (r *RosImu) Reconfigure(
 }
 
 func (r *RosImu) processMessage(msg *sensor_msgs.Imu) {
-	r.logger.Infof("MSG: %+v", r.msg)
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	r.msg = msg
 }
 
@@ -164,7 +154,6 @@ func (r *RosImu) Position(
 	_ context.Context,
 	_ map[string]interface{},
 ) (*geo.Point, float64, error) {
-	// TODO: Implement GPS
 	return geo.NewPoint(0, 0), 0, movementsensor.ErrMethodUnimplementedPosition
 }
 
@@ -179,7 +168,6 @@ func (r *RosImu) AngularVelocity(
 	_ context.Context,
 	_ map[string]interface{},
 ) (spatialmath.AngularVelocity, error) {
-	// IMU
 	if r.msg == nil {
 		return spatialmath.AngularVelocity{}, errors.New("message unavailable")
 	}
@@ -195,7 +183,6 @@ func (r *RosImu) LinearAcceleration(
 	_ context.Context,
 	_ map[string]interface{},
 ) (r3.Vector, error) {
-	// IMU
 	if r.msg == nil {
 		return r3.Vector{}, errors.New("message unavailable")
 	}
@@ -218,11 +205,8 @@ func (r *RosImu) Orientation(
 	_ context.Context,
 	_ map[string]interface{},
 ) (spatialmath.Orientation, error) {
-	// IMU
 	q := r.msg.Orientation
-	sq := &spatialmath.Quaternion{Real: q.W, Imag: q.X, Jmag: q.Y, Kmag: q.Z}
-	r.logger.Infof("q: %+v, sq: %+v", q, sq)
-	return sq, nil
+	return &spatialmath.Quaternion{Real: q.W, Imag: q.X, Jmag: q.Y, Kmag: q.Z}, nil
 }
 
 func (r *RosImu) Properties(
@@ -259,11 +243,6 @@ func (r *RosImu) Close(_ context.Context) error {
 	if r.subscriber != nil {
 		r.subscriber.Close()
 	}
-
-	if r.node != nil {
-		r.node.Close()
-	}
-
 	return nil
 }
 
@@ -286,7 +265,7 @@ func loadMessages(fn string) ([]sensor_msgs.Imu, error) {
 		return nil, err
 	}
 
-	fixed := []sensor_msgs.Imu{}
+	var fixed []sensor_msgs.Imu
 
 	for _, m := range all {
 		mm := sensor_msgs.Imu{}
