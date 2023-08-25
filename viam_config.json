@@ -146,7 +146,7 @@
     },
     {
       "type": "base",
-      "model": "viamlabs:ros:trackedbase",
+      "model": "viamlabs:ros:base",
       "attributes": {
         "topic": "/cmd_vel",
         "primary_uri": "localhost:11311"

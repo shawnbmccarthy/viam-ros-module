@@ -219,7 +219,9 @@ func (r *RosImu) Orientation(
 ) (spatialmath.Orientation, error) {
 	// IMU
 	q := r.msg.Orientation
-	return &spatialmath.Quaternion{Real: q.W, Imag: q.X, Jmag: q.Y, Kmag: q.Z}, nil
+	sq := &spatialmath.Quaternion{Real: q.W, Imag: q.X, Jmag: q.Y, Kmag: q.Z}
+	r.logger.Infof("q: %+v, sq: %+v", q, sq)
+	return sq, nil
 }
 
 func (r *RosImu) Properties(
@@ -295,7 +297,6 @@ func loadMessages(fn string) ([]sensor_msgs.Imu, error) {
 		angularVelCovariance := data["angular_velocity_covariance"].([]interface{})
 		linearAccel := data["linear_acceleration"].(map[string]interface{})
 		linearAccelCovariance := data["linear_acceleration_covariance"].([]interface{})
-		// TODO(SM): covariance array conversions
 
 		mm.Orientation = geometry_msgs.Quaternion{
 			X: orientation["x"].(float64),
