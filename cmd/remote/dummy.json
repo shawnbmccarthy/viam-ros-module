@@ -13,7 +13,7 @@
             "model": "viamlabs:ros:imu-dummy",
             "name": "imu-test",
             "attributes": {
-                "bag": "imu/data/imu_scan.bag"
+                "bag": "imu/data/imu.bag"
             }
         }
     ]
