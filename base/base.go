@@ -52,160 +52,162 @@ func NewTrackedBase(
 	conf resource.Config,
 	logger golog.Logger,
 ) (viambase.Base, error) {
-	t := &RosBase{
+	r := &RosBase{
 		Named:  conf.ResourceName().AsNamed(),
 		logger: logger,
 	}
 
-	if err := t.Reconfigure(ctx, deps, conf); err != nil {
+	if err := r.Reconfigure(ctx, deps, conf); err != nil {
 		return nil, err
 	}
 
 	// set twist message thread - need to stop sending after stop
 	go func() {
-		for atomic.LoadInt32(&t.closed) == 0 {
+		for atomic.LoadInt32(&r.closed) == 0 {
 			select {
-			case <-t.msgRate.SleepChan():
-				t.mu.Lock()
-				t.publisher.Write(t.twistMsg)
-				t.mu.Unlock()
+			case <-r.msgRate.SleepChan():
+				r.mu.Lock()
+				if r.moving {
+					r.publisher.Write(r.twistMsg)
+				}
+				r.mu.Unlock()
 			}
 		}
 	}()
 
-	return t, nil
+	return r, nil
 }
 
 // Reconfigure clean this up
-func (t *RosBase) Reconfigure(
+func (r *RosBase) Reconfigure(
 	_ context.Context,
 	_ resource.Dependencies,
 	conf resource.Config,
 ) error {
 	var err error
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	t.nodeName = conf.Attributes.String("node_name")
-	t.primaryUri = conf.Attributes.String("primary_uri")
-	t.topic = conf.Attributes.String("topic")
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.nodeName = conf.Attributes.String("node_name")
+	r.primaryUri = conf.Attributes.String("primary_uri")
+	r.topic = conf.Attributes.String("topic")
 
 	timeMs := conf.Attributes.Int("time_rate_ms", 250)
 
-	t.timeRate = time.Duration(timeMs) * time.Millisecond
-	t.twistMsg = &geometry_msgs.Twist{
+	r.timeRate = time.Duration(timeMs) * time.Millisecond
+	r.twistMsg = &geometry_msgs.Twist{
 		Linear:  geometry_msgs.Vector3{X: 0.0, Y: 0.0, Z: 0.0},
 		Angular: geometry_msgs.Vector3{X: 0.0, Y: 0.0, Z: 0.0},
 	}
 
-	if len(strings.TrimSpace(t.primaryUri)) == 0 {
+	if len(strings.TrimSpace(r.primaryUri)) == 0 {
 		return errors.New("ROS primary uri must be set to hostname:port")
 	}
 
-	if len(strings.TrimSpace(t.topic)) == 0 {
+	if len(strings.TrimSpace(r.topic)) == 0 {
 		return errors.New("ROS topic must be set to valid imu topic")
 	}
 
-	if t.publisher != nil {
-		t.publisher.Close()
+	if r.publisher != nil {
+		r.publisher.Close()
 	}
 
-	t.node, err = viamrosnode.GetInstance(t.primaryUri)
+	r.node, err = viamrosnode.GetInstance(r.primaryUri)
 	if err != nil {
 		return err
 	}
 
-	t.msgRate = t.node.TimeRate(t.timeRate)
+	r.msgRate = r.node.TimeRate(r.timeRate)
 	if err != nil {
 		return err
 	}
 
 	// publisher for twist messages
-	t.publisher, err = goroslib.NewPublisher(goroslib.PublisherConf{
-		Node:  t.node,
-		Topic: t.topic,
+	r.publisher, err = goroslib.NewPublisher(goroslib.PublisherConf{
+		Node:  r.node,
+		Topic: r.topic,
 		Msg:   &geometry_msgs.Twist{},
 	})
 	if err != nil {
 		return err
 	}
-	atomic.StoreInt32(&t.closed, 0)
+	atomic.StoreInt32(&r.closed, 0)
 	return nil
 }
 
-func (t *RosBase) MoveStraight(
+func (r *RosBase) MoveStraight(
 	ctx context.Context,
 	distanceMm int,
 	mmPerSec float64,
 	extra map[string]interface{},
 ) error {
-	t.logger.Warn("MoveStraight Not Implemented")
+	r.logger.Warn("MoveStraight Not Implemented")
 	return nil
 }
 
-func (t *RosBase) Spin(
+func (r *RosBase) Spin(
 	ctx context.Context,
 	angleDeg,
 	degsPerSec float64,
 	extra map[string]interface{},
 ) error {
-	t.logger.Warn("Spin Not Implemented")
+	r.logger.Warn("Spin Not Implemented")
 	return nil
 }
 
-func (t *RosBase) SetPower(
+func (r *RosBase) SetPower(
 	_ context.Context,
 	linear r3.Vector,
 	angular r3.Vector,
 	_ map[string]interface{},
 ) error {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	t.twistMsg = &geometry_msgs.Twist{
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.twistMsg = &geometry_msgs.Twist{
 		Linear:  geometry_msgs.Vector3{X: linear.Y, Y: 0.0, Z: 0.0},
 		Angular: geometry_msgs.Vector3{X: 0.0, Y: 0.0, Z: angular.Z},
 	}
-	t.moving = true
+	r.moving = true
 	return nil
 }
 
-func (t *RosBase) SetVelocity(
+func (r *RosBase) SetVelocity(
 	_ context.Context,
 	linear r3.Vector,
 	angular r3.Vector,
 	_ map[string]interface{},
 ) error {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	t.twistMsg = &geometry_msgs.Twist{
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.twistMsg = &geometry_msgs.Twist{
 		Linear:  geometry_msgs.Vector3{X: linear.Y, Y: 0.0, Z: 0.0},
 		Angular: geometry_msgs.Vector3{X: 0.0, Y: 0.0, Z: angular.Z},
 	}
-	t.moving = true
+	r.moving = true
 	return nil
 }
 
-func (t *RosBase) Stop(_ context.Context, _ map[string]interface{}) error {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	t.twistMsg = &geometry_msgs.Twist{
+func (r *RosBase) Stop(_ context.Context, _ map[string]interface{}) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.twistMsg = &geometry_msgs.Twist{
 		Linear:  geometry_msgs.Vector3{X: 0.0, Y: 0.0, Z: 0.0},
 		Angular: geometry_msgs.Vector3{X: 0.0, Y: 0.0, Z: 0.0},
 	}
-	t.moving = false
+	r.moving = false
 	return nil
 }
 
-func (t *RosBase) IsMoving(_ context.Context) (bool, error) {
-	return t.moving, nil
+func (r *RosBase) IsMoving(_ context.Context) (bool, error) {
+	return r.moving, nil
 }
 
-func (t *RosBase) Close(_ context.Context) error {
-	atomic.StoreInt32(&t.closed, 1)
-	t.publisher.Close()
+func (r *RosBase) Close(_ context.Context) error {
+	atomic.StoreInt32(&r.closed, 1)
+	r.publisher.Close()
 	return nil
 }
 
-func (t *RosBase) Properties(
+func (r *RosBase) Properties(
 	_ context.Context,
 	_ map[string]interface{},
 ) (viambase.Properties, error) {
@@ -215,7 +217,7 @@ func (t *RosBase) Properties(
 	}, nil
 }
 
-func (t *RosBase) Geometries(_ context.Context, _ map[string]interface{}) ([]spatialmath.Geometry, error) {
-	t.logger.Warn("Geometries Not Implemented")
+func (r *RosBase) Geometries(_ context.Context, _ map[string]interface{}) ([]spatialmath.Geometry, error) {
+	r.logger.Warn("Geometries Not Implemented")
 	return nil, nil
 }
