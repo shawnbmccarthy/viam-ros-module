@@ -67,9 +67,7 @@ func NewTrackedBase(
 			select {
 			case <-r.msgRate.SleepChan():
 				r.mu.Lock()
-				if r.moving {
-					r.publisher.Write(r.twistMsg)
-				}
+				r.publisher.Write(r.twistMsg)
 				r.mu.Unlock()
 			}
 		}
