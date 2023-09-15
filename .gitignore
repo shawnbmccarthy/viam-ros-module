@@ -27,4 +27,12 @@ viamrosmodule
 rosmodule
 imagetest
 
+# Ignore appImage for right now
 *~
+/.canon.yaml
+/AppImageBuilder.yml
+/mapview.png
+/rosmodule-latest-aarch64.AppImage
+/rosmodule-latest-aarch64.AppImage.zsync
+AppDir
+appimage-build

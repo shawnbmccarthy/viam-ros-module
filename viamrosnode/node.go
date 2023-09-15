@@ -19,6 +19,8 @@ func init() {
 	nodes = make(map[string]*goroslib.Node)
 }
 
+// GetInstance
+// TODO: add support for namespace
 func GetInstance(primary string) (*goroslib.Node, error) {
 	lock.Lock()
 	defer lock.Unlock()
@@ -27,7 +29,7 @@ func GetInstance(primary string) (*goroslib.Node, error) {
 		return node, nil
 	} else {
 		node, err := goroslib.NewNode(goroslib.NodeConf{
-			Name:          strings.Join([]string{"viamrosnode_", primary, strconv.Itoa(i)}, ""),
+			Name:          strings.Join([]string{"viamrosnode_", primary, "_", strconv.Itoa(i)}, ""),
 			MasterAddress: primary,
 		})
 		if err != nil {
