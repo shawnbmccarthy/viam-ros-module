@@ -38,7 +38,7 @@ This node will support subscriptions and publishers to the various nodes.
 We wanted to stay away from adding any ros packages (i.e. ros-bridge etc.) to ensure we don't cause any collision with 
 software that was existing.
 
-## Contact Info
+## Contributing
 
 We welcome pull requests and issues, if there are any issues you can email:
 

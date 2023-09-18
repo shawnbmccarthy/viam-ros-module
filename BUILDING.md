@@ -13,6 +13,7 @@ The initial ROS integration only supports:
 2. Ensure we have ssh access to the ROS system
 
 ### Clone this repo
+
 ```shell
 git clone https://github.com/shawnbmccarthy/viam-ros-module
 ```
@@ -20,12 +21,13 @@ git clone https://github.com/shawnbmccarthy/viam-ros-module
 **Note**: if git is not installed, `sudo apt install git`
 
 ### Setup Go
+
 Next we will need to install Go on the yahboom robot, we will assume jetson (the instructions will be similar for a Raspberry pi):
 1. Log into ROS robot: `ssh <user>@<machine.local>`
 2. Download Go: `curl -OL https://golang.org/dl/go1.20.6.linux-aarch64.tar.gz`, please make sure to download the appropriate architecture version
 3. Validate the integrity: `sha256sum <go install file>` and compare to checksum on [site](https://go.dev/dl/)
 4. Now install: `sudo tar -C /usr/local -xvf go1.20.6.linux-aarch64.tar.gz`
-5. Setup Go paths: add this to your profile - `export PATH=$PATH:/usr/local/go/bin`
+5. Setup Go paths: add this to your profile: `export PATH=$PATH:/usr/local/go/bin`
 
 Now we can test the go install:
 ```shell
@@ -38,6 +40,7 @@ go version go1.20.6 linux/arm64
 ```
 
 ### Build ROS Module
+
 Once we confirmed go is installed, we must build or rosmodule binary.
 
 ```shell
@@ -49,43 +52,41 @@ This will build our rosmodule binary which will be used by the viam config to st
 If we use a different binary name for the rosmodule this name will need to be updated in the config step below.
 
 ### Install Viam
+
 To create a viam robot, to set up viam follow the [install instructions](https://docs.viam.com/installation/).
 
 **Note**: Viam requires `libfuse2` to run the appImage, be sure to install the library: `sudo apt install libfuse2`
 
 
 ## Configure Viam
-Once viam is installed and running (`sudo systemctl status viam-server.service`), we can use the config found in `<path-to>/viam-ros-module/viam_config.json`
-to configure viam to work with ros.
+Once viam is installed and running (`sudo systemctl status viam-server.service`), we can use the config found in 
+[viam_config.json](./example_viam_config/viam_config.json) to configure viam to work with ros.
 
 **Note**: The configuration contains a network change for the local viam webserver to run on port `9090` as our ROS robot was
-already configured to
+already configured to use the `8080` port for its local ROS bridge webserver.
 
 This config contains:
 1. components for: cmd_vel topic, image topic, lidar topic, imu topic, battery topic, and edition topic.
 2. Attributes for ROS: Validate the topics as well as that roscore is running and the port used (we left the default port of 11311).
 3. Modular component: Validate binary name
 
-Once config is validate, select save and the config will be deployed to the robot, you can now go to the control tab to
+Once the config is validated, select save and the config will be deployed to the robot, you can now go to the control tab to
 test out the robot.
 
-# Contribute or Need help
+# Contributions
 
-If you would like to contribute, pull requests are welcome
-If you need help, you can raise issues
+All Pull requests and issues are welcome. The team will track and implement as required. If there are any issues you can email:
 
-# TODO
-
-1. testing (more imu testing needed)
-2. validate reconfigure logic
-3. Understand and integrate more of the ROS robot as needed
-
+* [shawn@viam.com](mailto:shawn@viam.com)
+* [solution-eng@viam.com](mailto:solution-eng@viam.com)
 
 # Topics found on Yahboom ROS Robot
 
-rostopic list -v
+Below are the list of topics found on the Yahboom robot, over time we will implement more of the robot features for 
+demonstration purposes
 
 ## Topics Implemented
+
 * /edition [transbot_msgs/Edition] 1 publisher
 * /cmd_vel [geometry_msgs/Twist] 3 publishers
 * /image [sensor_msgs/Image] 1 publisher
@@ -94,6 +95,7 @@ rostopic list -v
 * /scan [sensor_msgs/LaserScan] 1 subscriber
 
 ## Topics to Implement
+
 * /control_mode [std_msgs/Int32] 1 subscriber
 * /tf [tf2_msgs/TFMessage] 2 subscribers
 * /PWMServo [transbot_msgs/PWMServo] 1 subscriber
